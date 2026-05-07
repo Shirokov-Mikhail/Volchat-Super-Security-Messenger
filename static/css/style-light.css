@@ -1,0 +1,332 @@
+@font-face {
+    font-family: 'Montserrat';
+    src: url('../media/fonts/Montserrat/static/Montserrat-Bold.ttf');
+    font-weight: 600;
+}
+@font-face {
+    font-family: 'Roboto';
+    src: url('../media/fonts/Roboto/static/Roboto-Light.ttf');
+    font-weight: 300;
+}
+:root{
+    --main-font-color: #161614;
+    --main-fone-color: #FFFFFF;
+    --title-font: 'Montserrat', sans-serif;
+    --text-font: "Roboto", sans-serif;
+    --foter-color: #FFFFFF;
+}
+@keyframes slide-in {
+    0%{
+        opacity: 0;
+        transform: translateY(400px);
+    }
+    50%{
+        opacity: 2;
+        transform: translateY(100px);
+    }
+    100%{
+        opacity: 0;
+        transform: translateY(0);
+    }
+}
+body{
+    background-color: var(--main-fone-color);
+    view-timeline-axis: block;
+    view-timeline-name: --revealing-element;
+
+    animation: slide-in linar forwards;
+    animation-timeline: --revealing-element;
+    animation-fill-mode: both;
+}
+.title{
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--main-font-color);
+    font-family: var(--title-font);
+}
+.text{
+    color: var(--main-font-color);
+    font-family: var(--text-font);
+    font-weight: 600;
+    font-size: 14px;
+}
+.button{
+    color: var(--title-font);
+    font-family: var(--title-font);
+    font-weight: 600;
+    text-decoration: none;
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid var(--main-font-color);
+    background-color: var(--main-fone-color);
+    color: var(--main-font-color);
+    cursor: pointer;
+}
+.container{
+    margin-top: 35px;
+    margin-bottom: 35px;
+}
+main{
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+
+}
+main > *{
+    width: 70%;
+    align-self: center;
+}
+header{
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+}
+.logo{
+    width: 60px;
+    height: auto;
+    align-self: center;
+
+}
+nav{
+    display: flex;
+    justify-content: space-between;
+}
+.nav-element{
+    font-size: 20px;
+    color: var(--main-font-color);
+    text-decoration: none;
+    padding: 10px;
+    letter-spacing: 0.5px;
+
+}
+main{
+    margin: 10px;
+}
+.slider{
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+
+}
+.slider-image{
+    background-image: url('../media/foto/foto1.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    height: 300px;
+    width: 100%;
+    border: 1px;
+    border-radius: 10px;
+}
+.slider-content{
+
+    height: auto;
+
+}
+.slider-point{
+    width: 100%;
+    height: auto;
+    display: flex;
+    justify-content: center;
+    letter-spacing: 10px;
+    color: gray;
+}
+.active{
+    color: var(--main-font-color);
+}
+.point{
+    font-size: 60px;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+}
+.about-us{
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.about-us > *{
+    margin: 0.5%;
+}
+.about-us-left{
+    align-self: flex-start;
+    width: 49%;
+
+}
+.about-us-img{
+    height: 300px;
+    background-image: url('../media/foto/foto6.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+.about-us-text{
+    width: 49%;
+    margin-top: 30px;
+}
+.hello{
+    display: block;
+}
+.search-content{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.input{
+    width: 40%;
+    padding: 2.5px;
+    border: 1px solid var(--main-font-color);
+    border-radius: 10px;
+}
+.search-img{
+    width: 30px;
+    height: 30px;
+}
+.search-but{
+    border: none;
+    cursor: pointer;
+}
+.competitions{
+    display: flex;
+    flex-wrap: wrap;
+}
+.competition{
+    display: block;
+    width: 32%;
+    margin: 0.5%;
+
+}
+.competition > *{
+    width: 100%;
+}
+.comp-img{
+    border: 1px;
+    border-radius: 2.5%;
+
+}
+.stars{
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 20px;
+
+}
+.star{
+    width: 30px;
+    height: 30px;
+}
+.reviews{
+    display: flex;
+    flex-wrap: wrap;
+}
+.review{
+    display: flex;
+    width: 32%;
+    margin: 0.5%;
+    flex-wrap: wrap;
+    align-items: center;
+    filter: blur(10px);
+}
+.review-img{
+    width: 30%;
+    border-radius: 40%;
+
+}
+.open{
+    filter: none !important;
+}
+.date{
+    width: 100%;
+}
+.subscription > *{
+    width: 100%;
+    margin: 2.5px;
+}
+.subscription {
+    display: flex;
+    justify-content: start;
+    flex-wrap: wrap;
+    align-items: center;
+    width: 49%;
+    margin: 1%;
+
+}
+/* тут поправить надо */
+.subscriptions{
+    display: flex;
+    justify-content: space-evenly;
+
+}
+.form{
+    width: 50%;
+}
+.check{
+    width: 10%;
+}
+#forcheck{
+    width: 80%;
+}
+footer{
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    background-color: var();
+
+}
+.info{
+    display: flex;
+    width: 100%;
+    justify-content: space-evenly;
+}
+@media (min-width: 1200px){
+    .subscription{
+        width: 29%;
+    }
+}
+@media (max-width: 1200px){
+    .subscriptions{
+        display: flex;
+        justify-content: center;
+    }
+    .nav-element{
+        font-size: 20px;
+    }
+    .title{
+        font-size: 20px;
+    }
+}
+@media (max-width: 1000px){
+    .nav-element{
+        font-size: 18px;
+    }
+    .title{
+        font-size: 18px;
+    }
+    .text{
+        font-size: 14px;
+    }
+    .button{
+        font-size: 14px;
+    }
+    .logo{
+        width: 40px;
+        height: auto;
+    }
+    main > *{
+        width: 80%;
+    }
+}
+@media (max-width: 900px){
+    main > *{
+        width: 90%;
+    }
+    main{
+        justify-content: center;
+    }
+}
+@media (max-width: 800px){
+    main > *{
+        width: 99%;
+    }
+}
