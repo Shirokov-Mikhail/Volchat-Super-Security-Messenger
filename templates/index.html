@@ -16,7 +16,8 @@
             <h2 class="super-title title">VolChat<br> общайся как по кайфу</h2>
             <p class="title">Начни сейчас
             </p>
-            <a href="/auth/" class="button">Войти</a>
+<!--            <a href="/auth/" class="button">Войти</a>-->
+            <button  id="auth-btn" class="button">Войти</button>
             <div class="slise">
                 <p class="title">или</p>
             </div>
@@ -28,8 +29,8 @@
         </div>
     </div>
 
-    <form class="slider container slider-small filter absolut" id="register" action="/registaration/" method="POST">
-        <div class="inputs">
+    <form class="slider container slider-small filter absolut" style="display: none" id="register" action="/registaration/" method="POST">
+        <div class="x">
             <div class="input-block"><button class="close button" id="close-register">X</button></div>
         </div>
         <div class="inputs">
@@ -63,7 +64,26 @@
         </div>
         <button class="button  button-form" type="submit">Зарегистрироваться</button>
     </form>
-
+    <form class="slider container slider-small filter absolut" style="display: none" id='autorisi' action="/auth/" method="POST">
+        <div class="x">
+            <div class="input-block"><button class="close button" id="close_auth">X</button></div>
+        </div>
+        <div class="inputs">
+            <div class="input-block" id="email_block_auth">
+                <label for="email_auth">Логин, Email или Телефон</label>
+                <input type="text" id="email_auth" name="email" required placeholder="myEmail@volchat.ru">
+                <p class="error" style="display: {{ login_error_auth }}">Нет такого пользователя</p>
+            </div>
+            <div class="input-block"><label for="password_auth">Пароль</label>
+                <input type="password" name="password" id="password_auth" required  maxlength="30" minlength="8">
+                <p class="error" style="display: {{ password_error_auth }}">Не правильный пароль</p>
+                <div class="slise">
+                    <p><a class="text smaller-text" id="toPass" href="/chenge_password/">Забыли пароль ?</a></p>
+                </div>
+            </div>
+        </div>
+        <button class="button  button-form" type="submit">Зарегистрироваться</button>
+    </form>
 
 </main>
 <footer class="container">

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VolChat - Регистрация</title>
+    <link rel="stylesheet" href="../../static/css/style.css">
+
+</head>
+<body>
+<header>
+    <div class="bread-crums" style="display: none">
+        <a href="/">Главная</a>
+    </div>
+</header>
+<main class="gradient-back">
+    <form class="slider container slider-small filter" method="POST">
+        <div class="inputs">
+            <div class="input-block" id="email_block">
+                <label for="email">Логин, Email или Телефон</label>
+                <input type="text" id="email" name="email" required placeholder="myEmail@volchat.ru">
+                <p class="error" style="display: {{ login_error }}">Нет такого пользователя</p>
+            </div>
+            <div class="input-block"><label for="password">Пароль</label>
+                <input type="password" name="password" id="password" required  maxlength="30" minlength="8">
+                <p class="error" style="display: {{ password_error }}">Не правильный пароль</p>
+                <div class="slise">
+                    <p><a class="text smaller-text" id="toPass" href="/chenge_password/">Забыли пароль ?</a></p>
+                </div>
+            </div>
+        </div>
+        <button class="button  button-form" type="submit">Зарегистрироваться</button>
+    </form>
+</main>
+<footer class="container">
+    {% for i in [('реклама', 'ads'), ('о на', 'about')]%}
+    <a href="/{{i.1}}/" class="link">{{i.0}}</a>
+    <p class="link">|</p>
+    {% endfor %}
+</footer>
+<script src="../../static/js/registration.js"></script>
+</body>
+</html>
