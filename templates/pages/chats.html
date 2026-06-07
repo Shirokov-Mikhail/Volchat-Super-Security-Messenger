@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../../static/css/style.css">
+  <title>VolChat - Кайфовый мессенджер</title>
+
+  <script src="../static/js/main.js"></script>
+
+</head>
+<body>
+<main class="anim">
+  <div class="chats-panel">
+    <div class="chat-panel-element">
+      <h2 class="title">Чаты</h2>
+    </div>
+    <button class="chat-panel-element active-chat">
+      <img alt="Волчат" src="../../static/image/logo.png">
+      <p class="text">Мишаня</p>
+    </button>
+    <button class="chat-panel-element">
+      <img alt="Волчат" src="../../static/image/logo.png">
+      <p class="text">Мишаня</p>
+    </button>
+    <button class="chat-panel-element">
+      <img alt="Волчат" src="../../static/image/logo.png">
+      <p class="text">Мишаня</p>
+    </button>
+
+  </div>
+  <div class="right-panel">
+    <div class="chat-title-panel">
+      <button class="chat-panel-element">
+        <img src="../../static/image/logo.png" alt="Волчат">
+        <h2 class="title">Мишаня</h2>
+
+      </button>
+    </div>
+    <div class="chats-list">
+      <div class="messages">
+        <div class="message left">
+          <img class="message-img" src="../../static/image/logo.png" alt="Волчат">
+          <div class="message-content">
+            <p class="text">Привет, как дела ?</p>
+            <p class="text time">12:00</p>
+          </div>
+        </div>
+        <div class="message right">
+          <img class="message-img" src="../../static/image/logo.png" alt="Волчат">
+          <div class="message-content">
+            <p class="text">Привет, как дела ?</p>
+            <p class="text time">12:00</p>
+          </div>
+        </div>
+        <div class="message left">
+          <img class="message-img" src="../../static/image/logo.png" alt="Волчат">
+          <div class="message-content">
+            <p class="text">Привет, как дела ?</p>
+            <p class="text time">12:00</p>
+          </div>
+        </div>
+        <div class="message left">
+          <img class="message-img" src="../../static/image/logo.png" alt="Волчат">
+          <div class="message-content">
+            <p class="text">Привет, как дела ?</p>
+            <p class="text time">12:00</p>
+          </div>
+        </div>
+        <div class="message left">
+          <img class="message-img" src="../../static/image/logo.png" alt="Волчат">
+          <div class="message-content">
+            <p class="text">Привет, как дела ?</p>
+            <p class="text time">12:00</p>
+          </div>
+        </div>
+        <div class="message left">
+          <img class="message-img" src="../../static/image/logo.png" alt="Волчат">
+          <div class="message-content">
+            <p class="text">123123</p>
+            <p class="text time">12:00</p>
+          </div>
+        </div>
+      </div>
+      <div class="message-input">
+        <button><img class="send-img" src="../../static/image/logo.png"></button>
+        <div class="files-send-panel">
+        </div>
+        <input type="text" placeholder="Введите сообщение...">
+        <button class=""><img class="send-img" src="../../static/image/logo.png"></button>
+      </div>
+    </div>
+  </div>
+</main>
+<footer class="container">
+  {% for i in [('реклама', 'ads'), ('о на', 'about')]%}
+  <a href="/{{i.1}}/" class="link">{{i.0}}</a>
+  <p class="link">|</p>
+  {% endfor %}
+</footer>
+</body>
+</html>
+
