@@ -17,7 +17,11 @@
     --foter-color: #1B365D;
     --foter-font-size: 14px
 }
-body{
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100vh; /* Строго 100% высоты экрана */
+    overflow: hidden; /* Намертво отключаем общий скролл страницы */
     background-color: var(--main-fone-color);
 }
 .title{
@@ -125,8 +129,9 @@ main{
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
-    padding: 0;
-    margin: 0;
+    height: 90vh; /* Оставляем 10vh под твой футер */
+    margin: 10px;
+    overflow: hidden; /* Ничто не должно вываливаться из main */
 
 }
 main > *{
@@ -263,21 +268,20 @@ label{
 .gradient-back{
     background: radial-gradient(#252675 0%, transparent 70%);
 }
-.chats-panel{
+.chats-panel {
     display: flex;
+    flex-direction: column;
     width: 20%;
-    min-height: 88vh;
-    flex-wrap: wrap;
-    align-content: flex-start;
+    height: 100%; /* Занимает всю высоту main */
+    overflow-y: auto; /* Включаем прокрутку только для чатов */
 }
 .right-panel{
-    width: 79%;
+    width: 78%;
     display: flex;
-    align-self: flex-start;
-    align-items: flex-start;
-    flex-wrap: wrap;
+    flex-direction: column;
     margin-left: 1%;
-    max-height: 90vh;
+    margin-right: 1%;
+    height: 100%; /* Занимает всю высоту main */
 }
 
 .chat-panel-element{
@@ -323,18 +327,19 @@ label{
         width: 80%;
     }
 }
-.chats-list{
-    align-self: flex-end;
+.chats-list {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     width: 100%;
-    max-width: 70%;
-    min-height: 80vh;
+    flex-grow: 1;
+    overflow: hidden; /* Шапка и инпут стоят на месте */
 }
-.messages{
+.messages {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     width: 100%;
+    flex-grow: 1;
+    overflow-y: auto; /* Включаем прокрутку только для сообщений */
 
     img{
         height: 80px;
@@ -455,4 +460,34 @@ label{
         width: 210mm;
         filter: grayscale(100%);
     }
+}
+
+/* Вайб код настройки скроло */
+/* Настройки для Chrome, Edge, Safari, Opera */
+::-webkit-scrollbar {
+    width: 8px; /* Ширина вертикального скролла */
+    height: 8px; /* Высота горизонтального скролла (если понадобится) */
+}
+
+/* Дорожка, по которой ездит ползунок */
+::-webkit-scrollbar-track {
+    background: #0a0a0a; /* Очень темный фон дорожки */
+    border-radius: 10px;
+}
+
+/* Сам ползунок */
+::-webkit-scrollbar-thumb {
+    background: #333333; /* Темно-серый цвет ползунка */
+    border-radius: 10px;
+}
+
+/* Ползунок при наведении мыши */
+::-webkit-scrollbar-thumb:hover {
+    background: #555555; /* Чуть светлее, чтобы было видно взаимодействие */
+}
+
+/* Настройки для Firefox (он не понимает -webkit, у него свои правила) */
+* {
+    scrollbar-width: thin; /* Тонкий скролл */
+    scrollbar-color: #333333 #0a0a0a; /* цвет-ползунка цвет-дорожки */
 }
