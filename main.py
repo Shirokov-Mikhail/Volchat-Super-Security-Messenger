@@ -17,9 +17,22 @@ def index():
     if 'auth' not in session:
         session['auth'] = False
         session['user_id'] = -1
-    if True:
+    if not session['auth']:
+        db = DB(mysql)
+        print(db.add_members(4, 7))
         return render_template('index.html')
     return render_template('pages/chats.html')
+
+
+socketio.on('start-session')
+def user_session(user_id):
+    db = DB(mysql)
+    all_chats = db.view_chats_id(user_id)
+    emit(all_chats)
+
+socketio.on('load-messages')
+def user_load_messages(user_id, chat_id):
+    db = DB(mysql)
 
 
 @app.route('/auth')

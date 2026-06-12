@@ -15,7 +15,7 @@ class DB:
                 self.cur.execute(f'''SELECT `password`, `id` FROM users WHERE email = '{mail}' OR tel = '{tel}' OR `Login` = '{login}';''')
 
                 password_hash,  self.id = self.cur.fetchone()
-                self.id - int(self.id)
+                self.id = int(self.id)
                 return check_password_hash(password_hash, password)
             return False
         except Exception as e:
@@ -45,3 +45,56 @@ class DB:
             print('registration', e)
             return False
 
+    def add_chat(self, name, description='', type='lockal'):
+        try:
+            self.cur.execute(f''' SELECT EXISTS(SELECT 1 FROM chats WHERE name = '{name}')''')
+            if int(self.cur.fetchall()[0][0]) == int(0):
+                print(123)
+                self.cur.execute(f'''INSERT INTO `chats` (`name`, `type`, `description`) VALUES ('{name}','{type}','{description}')''');
+                self.mysql.connection.commit()
+                print(123)
+                return True
+            return False
+        except Exception as e:
+            print('error !!!', e)
+            raise ValueError('Server Error')
+
+    def add_members(self, chat_id, user_id, role='lockal'):
+        try:
+            self.cur.execute(f''' SELECT EXISTS(SELECT 1 FROM chats WHERE id = '{chat_id}')''')
+            if int(self.cur.fetchall()[0][0]) == int(1):
+                self.cur.execute(f'''INSERT INTO `chat_members`(`chat_id`, `user_id`, `role`) VALUES ('{chat_id}','{user_id}','{role}')''')
+                self.mysql.connection.commit()
+                return True
+            return False
+        except Exception as e:
+            print('added chat members error', e)
+            raise ValueError('Server Error')
+
+    def open_chats_element(self, chat_id):
+        try:
+            self.cur.execute(f'''SELECT `id`, `name`, `type`, `description` FROM `chats` WHERE `id`='{chat_id}' ''')
+            result = self.cur.fetchone()
+            print(result)
+            return result
+        except Exception as e:
+            print('open-chat-error', e)
+            return []
+
+    def view_chats_id(self, user_id):
+        try:
+            chats = []
+            self.cur.execute(f'''SELECT `chat_id` FROM `chat_members` WHERE `user_id`='{user_id}' ''')
+            for i in self.cur.fetchall():
+                chats.append(self.open_chats_element(i[0]))
+            return chats
+        except Exception as e:
+            print(e)
+            return []
+
+    def add_messages(self, sender:str, message:str, receiving:str):
+        try:
+            self.cur.execute('''''')
+        except Exception as e:
+            print(e)
+            return False
