@@ -19,7 +19,7 @@ def index():
         session['user_id'] = -1
     if not session['auth']:
         db = DB(mysql)
-        print(db.add_members(4, 7))
+        print(db.add_messages(7, 'Hello world', 4))
         return render_template('index.html')
     return render_template('pages/chats.html')
 

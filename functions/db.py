@@ -81,7 +81,7 @@ class DB:
             print('open-chat-error', e)
             return []
 
-    def view_chats_id(self, user_id):
+    def view_chats_id(self, user_id:int):
         try:
             chats = []
             self.cur.execute(f'''SELECT `chat_id` FROM `chat_members` WHERE `user_id`='{user_id}' ''')
@@ -92,9 +92,11 @@ class DB:
             print(e)
             return []
 
-    def add_messages(self, sender:str, message:str, receiving:str):
+    def add_messages(self, sender:int, message:str, chat_id:int):
         try:
-            self.cur.execute('''''')
+            self.cur.execute(f'''INSERT INTO `messages`(`chat_id`, `author_id`, `content`) VALUES ('{chat_id}','{sender}','{message}')''')
+            self.mysql.connection.commit()
+            return True
         except Exception as e:
             print(e)
             return False
