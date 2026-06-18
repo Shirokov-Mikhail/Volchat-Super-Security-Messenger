@@ -279,20 +279,51 @@ label{
     overflow-y: auto; /* Включаем прокрутку только для чатов */
 }
 .right-panel{
+
     width: 70%;
     display: flex;
     flex-direction: column;
     margin-left: 1%;
     margin-right: 9%;
+    filter: blur(10px);
     height: 100%; /* Занимает всю высоту main */
-}
 
+
+}
+.absolut-messages{
+
+    width: 60%;
+    position: absolute;
+    top: 20%;
+    right: 5%;
+    left: 35%;
+    color: white;
+    filter: blur(0) !important;
+    div{
+        display: flex;
+        width: 100%;
+        column-gap: 50px;
+        align-items: center;
+        img{
+
+            width: 70px;
+            height: 70px;
+        }
+    }
+
+}
+.white{
+    color: white;
+    height: 50px;
+    width: 40%;
+}
 .chat-panel-element{
     display: flex;
     justify-content: space-evenly;
     height: 80px;
     width: 100%;
     background-color: transparent;
+    align-items: center;
     margin: 10px;
     img{
         height: 100%;
@@ -331,6 +362,7 @@ label{
     }
 }
 .chats-list {
+
     display: flex;
     flex-direction: column;
     width: 100%;

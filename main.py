@@ -8,31 +8,67 @@ app.config["MYSQL_HOST"] = "localhost"
 app.config["MYSQL_USER"] = "root"
 app.config["MYSQL_PASSWORD"] = ""
 app.config["MYSQL_DB"] = "volchat"
-app.config['SECRET_KEY'] = "GooglePassword"
+app.config['SECRET_KEY'] = "Volchatus45Naperdatus7211"
+app.secret_key = 'Volchatus45Naperdatus7211'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+
+app.config['SESSION_COOKIE_SECURE'] = False # отключить при https
+
+app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
+
+
 mysql = MySQL(app)
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 @app.route('/')
 def index():
     if 'auth' not in session:
         session['auth'] = False
-        session['user_id'] = -1
+        session['id'] = -1
     if not session['auth']:
-        db = DB(mysql)
-        print(db.add_messages(7, 'Hello world', 4))
         return render_template('index.html')
-    return render_template('pages/chats.html')
+    return render_template('pages/chats.html', id=session['id'])
+
+@socketio.on('connect')
+def handle_connect():
+    try:
+        data = {
+            "status": 200,
+            "clients": [],
+            'error': None
+        }
+        if not session.get('auth'):
+            data['status'] = 401
+            socketio.emit('start-session', data)
+        else:
+            db = DB(mysql)
+            data['clients'] = db.view_chats_id(session['id'])
+            socketio.emit('start-session', data)
+
+    except Exception as e:
+        data = {
+            "status": 500,
+            "clients": [],
+            'error': e
+        }
+        socketio.emit('start-session', data)
 
 
-socketio.on('start-session')
-def user_session(user_id):
+
+@socketio.on('start-session')
+def user_session(data):
+    print("Получено событие start-session:", data)
+    user_id = data.get('user_id')
     db = DB(mysql)
     all_chats = db.view_chats_id(user_id)
-    emit(all_chats)
+    socketio.emit('start-session', {'greeting': 'Hello from Python Flask!'})
 
-socketio.on('load-messages')
-def user_load_messages(user_id, chat_id):
+@socketio.on('load-messages')
+def user_load_messages(data):
+    user_id = data.get('user_id')
+    chat_id = data.get('chat_id')
     db = DB(mysql)
+
 
 
 @app.route('/auth')
@@ -44,10 +80,12 @@ def users_post():
     db = DB(mysql)
     login = request.form.get('email')
     password = request.form.get('password')
-    print()
+
     if '@' in login and db.auth(password, mail=login):
         session['auth'] = True
         session['id'] = db.id
+        session["auth"] = True
+        print('auth ', session['auth'])
         return redirect('/')
     elif '+' in login and db.auth(password, tel=login):
         session['auth'] = True
@@ -78,10 +116,5 @@ def rg_post():
         return redirect(url_for('auth'))
     return render_template('/pages/registration.html', login_error='none')
 
-@socketio.on('connect')
-def chat_connect():
-    pass
-
 if __name__ == '__main__':
-    app.run(port=8080, host='127.0.0.1')
-
+    socketio.run(app, debug=True, allow_unsafe_werkzeug=True)
