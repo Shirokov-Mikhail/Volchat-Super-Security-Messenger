@@ -1,7 +1,7 @@
 from flask_mysqldb import MySQL
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 from flask_socketio import SocketIO, emit
-from functions.db import DB
+from functions.db import DB, DataBaseLoader
 
 app = Flask(__name__)
 app.config["MYSQL_HOST"] = "localhost"
@@ -20,30 +20,49 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
 mysql = MySQL(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+
+
 @app.route('/')
 def index():
-    if 'auth' not in session:
-        session['auth'] = False
-        session['id'] = -1
-    if not session['auth']:
-        return render_template('index.html')
-    return render_template('pages/chats.html', id=session['id'])
+    print(session)
+    return render_template('index.html')
 
 @socketio.on('connect')
-def handle_connect():
+def authorization_check():
+    print(session)
+    if 'login' in session and session['login'] != ' ':
+        login = session['login']
+        db = DataBaseLoader(mysql)
+        if db.auth(login):
+            socketio.emit('auth', {'status': 'success',
+                                   'id': db.id,
+                                   'key-verifi': db.message,
+                                   'key': db.key
+                                   })
+        else:
+            socketio.emit('auth', {
+                'status': 'error'
+            })
+
+@socketio.on('start-session')
+def handle_connect(data):
     try:
+
+        status = data['status']
+        id = int(data['id'])
+        session['login'] = data['login']
+        print(id)
         data = {
             "status": 200,
             "clients": [],
             'error': None
         }
-        if not session.get('auth'):
-            data['status'] = 401
-            socketio.emit('start-session', data)
-        else:
-            db = DB(mysql)
-            data['clients'] = db.view_chats_id(session['id'])
-            socketio.emit('start-session', data)
+        db = DataBaseLoader(mysql)
+        data['clients'] = db.loadChats(id)
+        session['auth'] = True
+        session['id'] = id
+        print(session)
+        socketio.emit('start-session', data)
 
     except Exception as e:
         data = {
@@ -54,22 +73,31 @@ def handle_connect():
         socketio.emit('start-session', data)
 
 
-
-@socketio.on('start-session')
-def user_session(data):
-    print("Получено событие start-session:", data)
-    user_id = data.get('user_id')
-    db = DB(mysql)
-    all_chats = db.view_chats_id(user_id)
-    socketio.emit('start-session', {'greeting': 'Hello from Python Flask!'})
-
-@socketio.on('load-messages')
+# супер нужная функция
+@socketio.on('auth')
 def user_load_messages(data):
-    user_id = data.get('user_id')
-    chat_id = data.get('chat_id')
-    db = DB(mysql)
+    login = data['login']
+    db = DataBaseLoader(mysql)
+    if db.auth(login):
+        socketio.emit('auth', {'status': 'success',
+                                            'id': db.id,
+                                            'key-verifi': db.message,
+                                            'key': db.key
+        })
+    else:
+        socketio.emit('auth', {
+            'status': 'error'
+        })
 
-
+@socketio.on('check-password')
+def user_check_password(data):
+    password = data['password']
+    id = data['id']
+    db = DataBaseLoader(mysql)
+    if db.check_password(password, id):
+        socketio.emit('check-password', {'status': 'success'})
+    else:
+        socketio.emit('check-password', {'status': 'error'})
 
 @app.route('/auth')
 def auth():

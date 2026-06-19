@@ -12,9 +12,10 @@ class DB:
 
             if int(self.cur.fetchall()[0][0]) == int(1):
 
-                self.cur.execute(f'''SELECT `password`, `id` FROM users WHERE email = '{mail}' OR tel = '{tel}' OR `Login` = '{login}';''')
+                self.cur.execute(f'''SELECT `password`, `id`, `test-message`, `private-key` FROM users WHERE email = '{mail}' OR tel = '{tel}' OR `Login` = '{login}';''')
 
-                password_hash,  self.id = self.cur.fetchone()
+                password_hash,  self.id, message = self.cur.fetchone()
+                self.message = message
                 self.id = int(self.id)
                 return check_password_hash(password_hash, password)
             return False
@@ -101,4 +102,38 @@ class DB:
             print(e)
             return False
 
+class DataBaseLoader:
+    def __init__(self, mysql):
+        self.mysql = mysql
+        self.cur = mysql.connection.cursor()
 
+    def auth(self, login):
+        try:
+            self.cur.execute(f'''SELECT EXISTS(SELECT 1 FROM users WHERE `Login` = '{login}');''')
+            if int(self.cur.fetchall()[0][0]) == int(1):
+                print(f'''SELECT `id`, `test-message`, `private-key` FROM users WHERE `Login` = '{login}'; ''')
+                self.cur.execute(f'''SELECT `id`, `test-message`, `private-key` FROM users WHERE `Login` = '{login}'; ''')
+                self.id, message, key = self.cur.fetchone()
+                self.message = message
+                self.id = int(self.id)
+                self.key = key
+                return True
+            return False
+        except Exception as e:
+            print('auth', e)
+            return False
+
+    def loadChats(self, user_id):
+        try:
+            chats = []
+            self.cur.execute(f'''SELECT `id`, `name` FROM `chats` ''')
+            for i in self.cur.fetchall():
+                chats.append((i[0], i[1]))
+            return chats
+        except Exception as e:
+            print(e)
+            return []
+
+
+    def loadMessages(self, user_id, chat_id):
+        pass

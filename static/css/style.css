@@ -312,6 +312,13 @@ label{
     }
 
 }
+.chat-page{
+    display: none;
+}
+.page{
+    width: 100%;
+    height: 100%;
+}
 .white{
     color: white;
     height: 50px;

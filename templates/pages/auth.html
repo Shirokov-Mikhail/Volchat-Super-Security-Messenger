@@ -17,15 +17,15 @@
     <form class="slider container slider-small filter" method="POST">
         <div class="inputs">
             <div class="input-block" id="email_block">
-                <label for="email">Логин, Email или Телефон</label>
-                <input type="text" id="email" name="email" required placeholder="myEmail@volchat.ru">
+                <label for="email">Логин</label>
+                <input type="text" id="email" name="email" required placeholder="Volchat">
                 <p class="error" style="display: {{ login_error }}">Нет такого пользователя</p>
             </div>
-            <div class="input-block"><label for="password">Пароль</label>
+            <div class="input-block"><label for="password">Секретный ключ</label>
                 <input type="password" name="password" id="password" required  maxlength="30" minlength="8">
-                <p class="error" style="display: {{ password_error }}">Не правильный пароль</p>
+                <p class="error" style="display: {{ password_error }}">Не правильный ключ</p>
                 <div class="slise">
-                    <p><a class="text smaller-text" id="toPass" href="/chenge_password/">Забыли пароль ?</a></p>
+                    <p><a class="text smaller-text" id="toPass" href="/chenge_password/">Забыли Ключ ?</a></p>
                 </div>
             </div>
         </div>
