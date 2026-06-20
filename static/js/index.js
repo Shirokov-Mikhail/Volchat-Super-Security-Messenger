@@ -28,6 +28,11 @@ const email_auth = document.getElementById("email_auth");
 const password_auth = document.getElementById("password_auth");
 const submit_auth = document.querySelectorAll(".button-auth");
 
+// x - овая регистрация
+const login = document.getElementById("login");
+const register_btn = document.querySelectorAll(".button-registation");
+const password_1 = document.getElementById("password");
+const password_2 = document.getElementById("password-repeat");
 
 
 // подгрузка чатов сервер сам поймет что сессии нет
@@ -94,6 +99,33 @@ socket.on('auth', function(data) {
         console.log(data['status']);
     }
 })
+function register() {
+    if (login.value !== '' && password_1.value !== '' && password_2.value === password_1.value && username_local !== '' && password_1.value.length >= 8) {
+        socket.emit('registration-check', {
+            'login': login.value,
+        })
+    }
+}
+socket.on('registration-check', function(data) {
+    if (data['status'] === 'success') {
+        // тут генераци ключей в переменную user_key и своего публичного в локалюную public_key_local
+        let public_key_local = ''
+        user_key = '';
+        username_local = login.value;
+        // тут зашифровываем hello world
+
+        //тут шифруем приватный ключ на пароль
+
+        // теперь если все успешно отпровляем снова емит но об регистрации
+        socket.emit('registration', {
+            'status': 'success',
+            'login': username_local,
+            'public_key': public_key_local,
+            'private_key': user_key,
+            'test-message': 'hello world'
+        })
+    }
+})
 // все что ниже нужно переписать
 function loadChat(chat_id) {
     socket.emit('load-chat', {
@@ -145,7 +177,11 @@ submit_auth.forEach((button) => {
         auth();
     })
 })
-
+register_btn.forEach((button) => {
+    button.addEventListener('click', (event) => {
+        register();
+    })
+})
 
 register_button.addEventListener("click", () => {
     register_form.style.display = "flex";

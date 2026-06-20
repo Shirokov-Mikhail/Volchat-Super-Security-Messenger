@@ -31,41 +31,47 @@
             </div>
         </div>
 
-        <form class="slider container slider-small filter absolut" style="display: none" id="register" action="/registration" method="POST">
+        <div class="slider container slider-small filter absolut" style="display: none" id="register" >
             <div class="x">
                 <div class="input-block"><button class="close button" id="close-register">X</button></div>
             </div>
             <div class="inputs">
-                <div class="input-block" id="email_block">
-                    <label for="email-for-x-rg">Email</label>
-                    <input type="email" id="email-for-x-rg" name="email" required placeholder="myEmail@volchat.ru">
-                    <p class="error" style="display: {{ login_error }}">Пользователь с таким Email уже существует</p>
-                    <div class="slise">
-                        <p><button class="text smaller-text" id="toTel">Зарегистрироваться по телефону</button></p>
-                    </div>
+<!--                <div class="input-block" id="email_block">-->
+<!--                    <label for="email-for-x-rg">Email</label>-->
+<!--                    <input type="email" id="email-for-x-rg" name="email" required placeholder="myEmail@volchat.ru">-->
+<!--                    <p class="error" style="display: {{ login_error }}">Пользователь с таким Email уже существует</p>-->
+<!--                    <div class="slise">-->
+<!--                        <p><button class="text smaller-text" id="toTel">Зарегистрироваться по телефону</button></p>-->
+<!--                    </div>-->
+<!--                </div>-->
+
+<!--                <div class="input-block" id="tel_block" style="display: none">-->
+<!--                    <label for="phone">Телефон</label>-->
+<!--                    <input type="tel" id="phone" name="phone" placeholder="+79809809080">-->
+<!--                    <p class="error" style="display: {{ login_error }}">Пользователь с таким телефоном уже существуетй</p>-->
+<!--                    <div class="slise">-->
+<!--                        <p><button id="toEmail" class="text smaller-text">Зарегистрироваться по Email</button></p>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--                -->
+                <div class="input-block">
+                    <label for="login">Ваш Имя пользователя (Логин) *</label>
+                    <input type="text" id="login" name="public-login" required placeholder="myName" minlength="3" maxlength="10">
+                    <p class="error" style="display: none">Пользователь с таким Именем уже есть</p>
                 </div>
 
-                <div class="input-block" id="tel_block" style="display: none">
-                    <label for="phone">Телефон</label>
-                    <input type="tel" id="phone" name="phone" placeholder="+79809809080">
-                    <p class="error" style="display: {{ login_error }}">Пользователь с таким телефоном уже существуетй</p>
-                    <div class="slise">
-                        <p><button id="toEmail" class="text smaller-text">Зарегистрироваться по Email</button></p>
-                    </div>
-                </div>
-
-                <div class="input-block"><label for="password">Пароль</label>
+                <div class="input-block"><label for="password">Пароль *</label>
                     <input type="password" name="password" id="password" required  maxlength="30" minlength="8">
                 </div>
-                <div class="input-block">
-                    <label for="login">Ваш логин</label>
-                    <input type="text" id="login" name="public-login" required placeholder="myName" minlength="3" maxlength="10">
+                <div class="input-block"><label for="password-repeat">Повтор пароля *</label>
+                    <input type="password" name="password" id="password-repeat" required  maxlength="30" minlength="8">
+                    <p class="error" style="display: none">Пароли не совпадают</p>
                 </div>
-                <p class="error" style="display: {{ login_error }}">Логин не коректный</p>
-                <p class="text" id="public-login-view">-Так выглядит ваш логин-</p>
+
             </div>
-            <button class="button  button-form" type="submit">Зарегистрироваться</button>
-        </form>
+            <button class="button  button-form button-registation" type="submit">Зарегистрироваться</button>
+        </div>
+<!--        вход -->
         <div class="slider container slider-small filter absolut" style="display: none" id='autorisi' >
             <div class="x">
                 <div class="input-block"><button class="close button" id="close_auth">X</button></div>
@@ -87,25 +93,6 @@
             <button class="button  button-form button-auth" type="button" id="submin-x-auth">Войти</button>
         </div>
     </div>
-<!--    <div class="login-page container">-->
-<!--        <form class="slider container slider-small filter" method="POST">-->
-<!--            <div class="inputs">-->
-<!--                <div class="input-block" id="email_block">-->
-<!--                    <label for="email">Логин</label>-->
-<!--                    <input type="text" id="email" name="email" required placeholder="Volchat">-->
-<!--                    <p class="error" style="display: {{ login_error }}">Нет такого пользователя</p>-->
-<!--                </div>-->
-<!--                <div class="input-block"><label for="password">Секретный ключ</label>-->
-<!--                    <input type="password" name="password" id="password" required  maxlength="30" minlength="8">-->
-<!--                    <p class="error" style="display: {{ password_error }}">Не правильный ключ</p>-->
-<!--                    <div class="slise">-->
-<!--                        <p><a class="text smaller-text" id="toPass" href="/chenge_password/">Забыли Ключ ?</a></p>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--            <button class="button  button-form" type="submit">Зарегистрироваться</button>-->
-<!--        </form>-->
-<!--    </div>-->
     <div class="chat-page page" id="chat-page">
         <div class="chats-panel" id="contacts">
             <div class="chat-panel-element">

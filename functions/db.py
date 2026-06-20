@@ -123,6 +123,28 @@ class DataBaseLoader:
             print('auth', e)
             return False
 
+    def check_login(self, login):
+        try:
+            self.cur.execute(f'''SELECT `id` FROM `users` WHERE `Login`='{login}'; ''')
+            if len(self.cur.fetchone()) == 0:
+                return True
+            return False
+        except Exception as e:
+            print('check-login', e)
+            return False
+
+    def registration(self, login, public_key, private_key, test_message):
+        try:
+            if self.check_login(login):
+                self.cur.execute(f'''INSERT INTO `users`(`Login`, `private-key`, `publick-key`, `test-message`) VALUES ('{login}','{private_key}','{public_key}','{test_message}'); ''')
+                self.mysql.connection.commit()
+                return True
+            return False
+        except Exception as e:
+            print('registration', e)
+            return False
+
+
     def loadChats(self, user_id):
         try:
             chats = []

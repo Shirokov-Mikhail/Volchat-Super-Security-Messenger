@@ -3,6 +3,8 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify, s
 from flask_socketio import SocketIO, emit
 from functions.db import DB, DataBaseLoader
 
+from flask_session import Session
+
 app = Flask(__name__)
 app.config["MYSQL_HOST"] = "localhost"
 app.config["MYSQL_USER"] = "root"
@@ -16,21 +18,24 @@ app.config['SESSION_COOKIE_SECURE'] = False # отключить при https
 
 app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
 
+app.config['SESSION_TYPE'] = 'filesystem'
+Session(app)
+
 
 mysql = MySQL(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False)
 
 
 
 @app.route('/')
 def index():
-    print(session)
+    print('/', session)
     return render_template('index.html')
 
 @socketio.on('connect')
 def authorization_check():
-    print(session)
-    if 'login' in session and session['login'] != ' ':
+    print('connect', session)
+    if 'login' in session and session['login'] != '':
         login = session['login']
         db = DataBaseLoader(mysql)
         if db.auth(login):
@@ -99,6 +104,28 @@ def user_check_password(data):
     else:
         socketio.emit('check-password', {'status': 'error'})
 
+@socketio.on('registration-check')
+def register(data):
+    login = data['login']
+    db = DataBaseLoader(mysql)
+    if db.check_login(login):
+        socketio.emit('registration-check', {'status': 'success'})
+    else:
+        socketio.emit('registration-check', {'status': 'error'})
+
+@socketio.on('registration')
+def registration(data):
+    login = data['login']
+    public_key = data['public_key']
+    private_key = data['private_key']
+    test_message = data['test-message']
+    db = DataBaseLoader(mysql)
+    if db.registration(login, public_key, private_key, test_message):
+        socketio.emit('registration', {'status': 'success'})
+    else:
+        socketio.emit('registration', {'status': 'error'})
+
+#устарело уберу потом
 @app.route('/auth')
 def auth():
     return render_template('/pages/auth.html', login_error='none', password_error='none')
