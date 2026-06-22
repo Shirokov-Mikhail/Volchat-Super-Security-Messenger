@@ -57,7 +57,7 @@
                 <div class="input-block">
                     <label for="login">Ваш Имя пользователя (Логин) *</label>
                     <input type="text" id="login" name="public-login" required placeholder="myName" minlength="3" maxlength="10">
-                    <p class="error" style="display: none">Пользователь с таким Именем уже есть</p>
+                    <p class="error" id="reg-error" style="display: none">Пользователь с таким Именем уже есть</p>
                 </div>
 
                 <div class="input-block"><label for="password">Пароль *</label>
@@ -65,7 +65,7 @@
                 </div>
                 <div class="input-block"><label for="password-repeat">Повтор пароля *</label>
                     <input type="password" name="password" id="password-repeat" required  maxlength="30" minlength="8">
-                    <p class="error" style="display: none">Пароли не совпадают</p>
+                    <p class="error" id='password-error' style="display: none">Пароли не совпадают</p>
                 </div>
 
             </div>
@@ -80,11 +80,11 @@
                 <div class="input-block" id="email_block_auth">
                     <label for="email_auth">Логин</label>
                     <input type="text" id="email_auth" name="email" class="email" required placeholder="myEmail@volchat.ru">
-                    <p class="error" style="display: none">Нет такого пользователя</p>
+                    <p class="error" id="auth_error" style="display: none">Нет такого пользователя</p>
                 </div>
                 <div class="input-block"><label for="password_auth">Пароль</label>
                     <input type="password" name="password" class="password" id="password_auth" required  maxlength="30" minlength="8">
-                    <p class="error" style="display: none">Не правильный Пароль</p>
+                    <p class="error" id="auth_pass_error" style="display: none">Не правильный Пароль</p>
                     <div class="slise">
                         <p><a class="text smaller-text" id="toPass" href="/chenge_password/">Забыли Пароль ?</a></p>
                     </div>

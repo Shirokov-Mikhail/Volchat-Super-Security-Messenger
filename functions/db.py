@@ -117,6 +117,7 @@ class DataBaseLoader:
                 self.message = message
                 self.id = int(self.id)
                 self.key = key
+                print(True)
                 return True
             return False
         except Exception as e:
@@ -125,8 +126,11 @@ class DataBaseLoader:
 
     def check_login(self, login):
         try:
+
             self.cur.execute(f'''SELECT `id` FROM `users` WHERE `Login`='{login}'; ''')
-            if len(self.cur.fetchone()) == 0:
+            db_data = self.cur.fetchone()
+
+            if db_data is None:
                 return True
             return False
         except Exception as e:
@@ -144,18 +148,69 @@ class DataBaseLoader:
             print('registration', e)
             return False
 
+    def select_id(self, login):
+        try:
+            self.cur.execute(f'''SELECT `id` FROM `users` WHERE `Login`='{login}'; ''')
+            db_data = self.cur.fetchone()
+            if db_data is not None:
+                return int(db_data[0])
+            return False
+        except Exception as e:
+            print('select-id', e)
+            return False
+
+    def load_chat_member(self, user_id:int):
+        try:
+            self.cur.execute(f'''SELECT `chat_id` FROM `chat_members` WHERE `user_id`='{user_id}' ''')
+            chat_ids = [i[0] for i in self.cur.fetchall()]
+            return chat_ids
+        except Exception as e:
+            print('load-chat-member', e)
+            return []
 
     def loadChats(self, user_id):
         try:
             chats = []
-            self.cur.execute(f'''SELECT `id`, `name` FROM `chats` ''')
-            for i in self.cur.fetchall():
-                chats.append((i[0], i[1]))
+            print(user_id)
+            for i in self.load_chat_member(user_id):
+                self.cur.execute(f'''SELECT `id`, `name` FROM `chats` WHERE `id`='{i}'; ''')
+                info = self.cur.fetchone()
+                chats.append((info[0], info[1]))
             return chats
         except Exception as e:
             print(e)
             return []
 
-
     def loadMessages(self, user_id, chat_id):
-        pass
+        try:
+            self.cur.execute(f'''SELECT `content` FROM `messages` WHERE `chat_id`='{chat_id}' AND `author_id`='{user_id}';''')
+            out = [i[0] for i in self.cur.fetchall()]
+            self.cur.execute(f'''SELECT `content` FROM `messages` WHERE `chat_id`='{chat_id}' AND `author_id`<>'{user_id}';''')
+            into = [i[0] for i in self.cur.fetchall()]
+            return out, into
+        except Exception as e:
+            print('load-messages', e)
+            return [], []
+
+    #Только когда в чате 2 человек
+    def serchUserInfo(self, user_id, chat_id):
+        try:
+            self.cur.execute(f'''SELECT `user_id` FROM `chat_members` WHERE `user_id` <> '{user_id}' AND `chat_id`='{chat_id}';''')
+            self.friend_id = self.cur.fetchone()[0]
+            print(self.friend_id)
+            return True
+        except Exception as e:
+            print('serch-user-info', e)
+            return False
+
+    def load_Friends_Info(self, user_id, chat_id):
+        try:
+            if self.serchUserInfo(user_id, chat_id):
+                self.cur.execute(f''' SELECT `Login` FROM `users` WHERE `id`='{self.friend_id}';''')
+                friend_login = self.cur.fetchone()[0]
+                return friend_login
+            else:
+                raise ValueError('User not found')
+        except Exception as e:
+            print('load Friends info', e)
+            return ''

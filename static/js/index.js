@@ -13,27 +13,30 @@ const x_close = document.getElementById("close_auth");
 
 
 const contacts = document.getElementById("contacts");
+
+// Пока не используется
 const username = document.getElementById("name");
-const messages_list = document.getElementById("messages-list");
+const messages_list = document.getElementById("messages");
 const send_button = document.getElementById("send-button");
 const send_message = document.getElementById("send-message");
+
 const start_panel = document.getElementById("start-panel");
 const main_chat_panel = document.getElementById("chat-panel");
-
-
-const error_class = document.querySelectorAll('.error');
 
 //элементы x - овой авторизации
 const email_auth = document.getElementById("email_auth");
 const password_auth = document.getElementById("password_auth");
 const submit_auth = document.querySelectorAll(".button-auth");
+const auth_error = document.getElementById('auth_error')
+const auth_pass_error = document.getElementById("auth_pass_error");
 
 // x - овая регистрация
 const login = document.getElementById("login");
 const register_btn = document.querySelectorAll(".button-registation");
 const password_1 = document.getElementById("password");
 const password_2 = document.getElementById("password-repeat");
-
+const login_error = document.getElementById("reg-error");
+const password_repeat_error = document.getElementById("password-error");
 
 // подгрузка чатов сервер сам поймет что сессии нет
 let username_local;
@@ -41,13 +44,13 @@ let user_id;
 let chats = [];
 let user_key;
 let publickey;
-
+// подгрузка чатов
 const socket = io("http://127.0.0.1:5000");
 socket.on('start-session', function(data) {
     if (data['status'] === 200){
         start_page.style.display = "none";
 
-        chat_page.style.display = "block";
+        chat_page.style.display = "flex";
         contacts.textContent = ''
         contacts.innerHTML = '<div class="chat-panel-element">\n' +
             '      <h2 class="title">Чаты</h2>\n' +
@@ -67,47 +70,65 @@ socket.on('start-session', function(data) {
 });
 
 
-
+//проверка для авторизации
 function auth() {
     if (email_auth.value !== '' && password_auth.value !== '') {
-        console.log(123)
         socket.emit('auth', {
             'login': email_auth.value,
         })
     }
 
 }
+// авторизация
 socket.on('auth', function(data) {
     if (data['status'] === 'success'){
 
+        console.log(data);
+        email_auth.style.borderColor='black';
+        auth_error.style.display = 'none';
         let user_local_id = data['id']
         let test_messages = data['key-verifi'];
         let key = data['key'];
         // тут должен быть вызов функции расшифровки текста
         if (test_messages === 'hello world') {
+
+            auth_pass_error.style.display = 'none';
+            password_auth.style.borderColor='black';
             user_key = key
             user_id = data['id']
             username_local = email_auth.value
             socket.emit('start-session', {'status': 'success', 'id': user_local_id, 'login': username_local})
         }
+        else{
+            auth_pass_error.style.display = 'block';
+            password_auth.style.borderColor='red';
+        }
     }
-
     else {
-        error_class.forEach((element) => {
-            element.style.display = 'flex'
-        });
+        auth_error.style.display = 'block';
+        email_auth.style.borderColor='red';
         console.log(data['status']);
     }
 })
+// проверка регистрации
 function register() {
     if (login.value !== '' && password_1.value !== '' && password_2.value === password_1.value && username_local !== '' && password_1.value.length >= 8) {
+        password_1.style.borderColor = 'black';
+        password_2.style.borderColor = 'black';
+        password_repeat_error.style.display = 'none';
         socket.emit('registration-check', {
             'login': login.value,
         })
+    }else if (password_1.value !== password_2.value) {
+        password_1.style.borderColor = 'red';
+        password_2.style.borderColor = 'red';
+        password_repeat_error.style.display = 'block';
     }
 }
 socket.on('registration-check', function(data) {
     if (data['status'] === 'success') {
+        login.style.borderColor = 'black';
+        login_error.style.display = 'none';
         // тут генераци ключей в переменную user_key и своего публичного в локалюную public_key_local
         let public_key_local = ''
         user_key = '';
@@ -117,6 +138,7 @@ socket.on('registration-check', function(data) {
         //тут шифруем приватный ключ на пароль
 
         // теперь если все успешно отпровляем снова емит но об регистрации
+
         socket.emit('registration', {
             'status': 'success',
             'login': username_local,
@@ -125,26 +147,89 @@ socket.on('registration-check', function(data) {
             'test-message': 'hello world'
         })
     }
+    else {
+        login.style.borderColor = 'red';
+        login_error.style.display = 'block';
+    }
 })
-// все что ниже нужно переписать
+socket.on('registration', function(data) {
+    if (data['status'] === 'success') {
+        user_id = data['id']
+        socket.emit('start-session', {'status': 'success', 'id': user_id, 'login': username_local})
+
+
+    }
+})
+
 function loadChat(chat_id) {
     socket.emit('load-chat', {
-
-        'chat_id': chat_id});
+        'chat_id': chat_id,
+        'user_id': user_id});
 
 }
-function openChat(all_id, id) {
+socket.on('load-chat', function(data){
+    if (data['status'] === 'success') {
+        chat_page.style.display = 'flex'
+        username.textContent = data['friend_login'];
+
+        const into = data['into'] || {};
+        const out = data['out'] || {};
+        // лютая сортировочка от мистера интелекта
+        const allKeys = [...Object.keys(into), ...Object.keys(out)].sort((a, b) => a - b);
+
+        let htmlContent = '';
+
+        allKeys.forEach(key => {
+            if (key in into) {
+                htmlContent += `<div class="message left">
+            <img class="message-img" src="../../static/image/logo.png" alt="Волчат">
+            <div class="message-content">
+                <p class="text">${into[key]}</p>
+                <p class="text time">00:00</p>
+            </div>
+        </div>`;
+            } else if (key in out) {
+                htmlContent += `<div class="message right">
+            <img class="message-img" src="../../static/image/logo.png" alt="Волчат">
+            <div class="message-content">
+                <p class="text">${out[key]}</p>
+                <p class="text time">00:00</p>
+            </div>
+        </div>`;
+            }
+        });
+
+        // 1. Вставляем сообщения в DOM
+        messages_list.innerHTML = htmlContent;
+
+        // 2. СРАЗУ ЖЕ прокручиваем блок вниз
+        // ВАЖНО: Убедись, что ищешь правильный ID.
+        // В твоем HTML скроллится блок id="messages", а не id="messages-list"
+        const scrollContainer = document.getElementById('messages');
+
+        // Используем небольшую задержку, чтобы браузер успел отрисовать новый HTML
+        // перед тем, как считать его высоту (scrollHeight)
+        setTimeout(() => {
+            scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        }, 10);
+    }
+})
+// все что ниже нужно переписать
+function openChat(all_id, id) {//id чата, id уже не помню чего;
     console.log(all_id, id);
     start_panel.style.display = "none";
     main_chat_panel.style.filter = "none";
     main_chat_panel.style.pointerEvents = 'auto'
+    main_chat_panel.style.display = "block";
     contacts.textContent = ''
     contacts.innerHTML = '<div class="chat-panel-element">\n' +
         '      <h2 class="title">Чаты</h2>\n' +
         '    </div>'
+    console.log(chats)
     for (let key in chats) {
         console.log(id, key)
         if (Number(key) === Number(id)) {
+            loadChat(Number(all_id));
             contacts.innerHTML += `<button onclick="openChat(${chats[key][0]}, ${key})" class="chat-panel-element active-chat">
       <p class="text">${chats[key][1]}</p> </button>`;
         }
@@ -166,7 +251,6 @@ function clearMessages(){
 document.addEventListener("keydown", (event) => {
     switch (event.code) {
         case 'Escape':
-            clearMessages()
             break
 
     }
