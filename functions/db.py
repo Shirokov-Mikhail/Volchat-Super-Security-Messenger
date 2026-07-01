@@ -50,10 +50,10 @@ class DB:
         try:
             self.cur.execute(f''' SELECT EXISTS(SELECT 1 FROM chats WHERE name = '{name}')''')
             if int(self.cur.fetchall()[0][0]) == int(0):
-                print(123)
+
                 self.cur.execute(f'''INSERT INTO `chats` (`name`, `type`, `description`) VALUES ('{name}','{type}','{description}')''');
                 self.mysql.connection.commit()
-                print(123)
+
                 return True
             return False
         except Exception as e:
@@ -76,7 +76,7 @@ class DB:
         try:
             self.cur.execute(f'''SELECT `id`, `name`, `type`, `description` FROM `chats` WHERE `id`='{chat_id}' ''')
             result = self.cur.fetchone()
-            print(result)
+
             return result
         except Exception as e:
             print('open-chat-error', e)
@@ -111,13 +111,12 @@ class DataBaseLoader:
         try:
             self.cur.execute(f'''SELECT EXISTS(SELECT 1 FROM users WHERE `Login` = '{login}');''')
             if int(self.cur.fetchall()[0][0]) == int(1):
-                print(f'''SELECT `id`, `test-message`, `private-key` FROM users WHERE `Login` = '{login}'; ''')
                 self.cur.execute(f'''SELECT `id`, `test-message`, `private-key` FROM users WHERE `Login` = '{login}'; ''')
                 self.id, message, key = self.cur.fetchone()
                 self.message = message
                 self.id = int(self.id)
                 self.key = key
-                print(True)
+
                 return True
             return False
         except Exception as e:
@@ -171,7 +170,6 @@ class DataBaseLoader:
     def loadChats(self, user_id):
         try:
             chats = []
-            print(user_id)
             for i in self.load_chat_member(user_id):
                 self.cur.execute(f'''SELECT `id`, `name` FROM `chats` WHERE `id`='{i}'; ''')
                 info = self.cur.fetchone()
@@ -181,13 +179,15 @@ class DataBaseLoader:
             print(e)
             return []
 
-    def loadMessages(self, user_id, chat_id):
+    def loadMessages(self, user_id:int, chat_id:int):
         try:
             self.cur.execute(f'''SELECT `content` FROM `messages` WHERE `chat_id`='{chat_id}' AND `author_id`='{user_id}';''')
             out = [i[0] for i in self.cur.fetchall()]
             self.cur.execute(f'''SELECT `content` FROM `messages` WHERE `chat_id`='{chat_id}' AND `author_id`<>'{user_id}';''')
             into = [i[0] for i in self.cur.fetchall()]
-            return out, into
+            self.cur.execute(f'''SELECT `content`, `author_id` FROM `messages` WHERE `chat_id`='{chat_id}';''')
+            all = [(i[0], True if int(i[1]) == user_id else False) for i in self.cur.fetchall()]
+            return out, into, all
         except Exception as e:
             print('load-messages', e)
             return [], []
@@ -197,7 +197,7 @@ class DataBaseLoader:
         try:
             self.cur.execute(f'''SELECT `user_id` FROM `chat_members` WHERE `user_id` <> '{user_id}' AND `chat_id`='{chat_id}';''')
             self.friend_id = self.cur.fetchone()[0]
-            print(self.friend_id)
+
             return True
         except Exception as e:
             print('serch-user-info', e)
@@ -214,3 +214,15 @@ class DataBaseLoader:
         except Exception as e:
             print('load Friends info', e)
             return ''
+
+    def send_messages(self, message, user_id, chat_id, type_message='text'):
+        try:
+            if type_message == 'text':
+                self.cur.execute(f'''INSERT INTO `messages`(`chat_id`, `author_id`, `content`) VALUES ('{chat_id}','{user_id}','{message}') ''')
+            else:
+                self.cur.execute(f'''INSERT INTO `messages`(`chat_id`, `author_id`, `content`, `type`) VALUES ('{chat_id}','{user_id}','{message}','{type_message}') ''')
+            self.mysql.connection.commit()
+            return True
+        except Exception as e:
+            print('send messages', e)
+            return False

@@ -43,7 +43,10 @@ let username_local;
 let user_id;
 let chats = [];
 let user_key;
+let current_chat_id;
+let privatekey;
 let publickey;
+let active_chat_id;
 // подгрузка чатов
 const socket = io("http://127.0.0.1:5000");
 socket.on('start-session', function(data) {
@@ -81,8 +84,7 @@ function auth() {
 }
 // авторизация
 socket.on('auth', function(data) {
-    if (data['status'] === 'success'){
-
+    if (data['status'] === 'success' && user_id !== NaN){
         console.log(data);
         email_auth.style.borderColor='black';
         auth_error.style.display = 'none';
@@ -156,65 +158,74 @@ socket.on('registration', function(data) {
     if (data['status'] === 'success') {
         user_id = data['id']
         socket.emit('start-session', {'status': 'success', 'id': user_id, 'login': username_local})
-
-
     }
 })
-
 function loadChat(chat_id) {
+    current_chat_id = chat_id
     socket.emit('load-chat', {
         'chat_id': chat_id,
         'user_id': user_id});
-
 }
 socket.on('load-chat', function(data){
     if (data['status'] === 'success') {
         chat_page.style.display = 'flex'
         username.textContent = data['friend_login'];
 
-        const into = data['into'] || {};
-        const out = data['out'] || {};
+        const into = data['into'] || [];
+        const out = data['out'] || [];
+        const all_messages = data['all'];
         // лютая сортировочка от мистера интелекта
         const allKeys = [...Object.keys(into), ...Object.keys(out)].sort((a, b) => a - b);
 
         let htmlContent = '';
 
-        allKeys.forEach(key => {
-            if (key in into) {
-                htmlContent += `<div class="message left">
-            <img class="message-img" src="../../static/image/logo.png" alt="Волчат">
-            <div class="message-content">
-                <p class="text">${into[key]}</p>
-                <p class="text time">00:00</p>
-            </div>
-        </div>`;
-            } else if (key in out) {
+        all_messages.forEach(key => {
+            if (Boolean(key[1])) {
                 htmlContent += `<div class="message right">
             <img class="message-img" src="../../static/image/logo.png" alt="Волчат">
             <div class="message-content">
-                <p class="text">${out[key]}</p>
+                <p class="text">${key[0]}</p>
+                <p class="text time">00:00</p>
+            </div>
+        </div>`;
+            } else {
+                htmlContent += `<div class="message left">
+            <img class="message-img" src="../../static/image/logo.png" alt="Волчат">
+            <div class="message-content">
+                <p class="text">${key[0]}</p>
                 <p class="text time">00:00</p>
             </div>
         </div>`;
             }
         });
-
-        // 1. Вставляем сообщения в DOM
         messages_list.innerHTML = htmlContent;
 
-        // 2. СРАЗУ ЖЕ прокручиваем блок вниз
-        // ВАЖНО: Убедись, что ищешь правильный ID.
-        // В твоем HTML скроллится блок id="messages", а не id="messages-list"
         const scrollContainer = document.getElementById('messages');
 
-        // Используем небольшую задержку, чтобы браузер успел отрисовать новый HTML
-        // перед тем, как считать его высоту (scrollHeight)
         setTimeout(() => {
             scrollContainer.scrollTop = scrollContainer.scrollHeight;
         }, 10);
+        setTimeout(updateChat, 10000)
     }
 })
+
+function send_messages() {
+    if (send_message.value !== '' && active_chat_id) {
+        console.log(send_message.value);
+        let message = send_message.value;
+        // шифруем сообщение
+
+        // на публичный ключ союеседника
+        socket.emit('send-message', {
+            'message': message,
+            'user_id': user_id,
+            'chat_id': active_chat_id
+        })
+    }
+}
+
 // все что ниже нужно переписать
+
 function openChat(all_id, id) {//id чата, id уже не помню чего;
     console.log(all_id, id);
     start_panel.style.display = "none";
@@ -230,6 +241,7 @@ function openChat(all_id, id) {//id чата, id уже не помню чего
         console.log(id, key)
         if (Number(key) === Number(id)) {
             loadChat(Number(all_id));
+            active_chat_id = all_id;
             contacts.innerHTML += `<button onclick="openChat(${chats[key][0]}, ${key})" class="chat-panel-element active-chat">
       <p class="text">${chats[key][1]}</p> </button>`;
         }
@@ -244,16 +256,27 @@ function openChat(all_id, id) {//id чата, id уже не помню чего
 
 }
 function clearMessages(){
+    if(active_chat_id){
 
+    }
 }
 
 // до сюда примерно
+function updateChat(){
+    loadChat(current_chat_id)
+    setTimeout(updateChat, 10000)
+}
+// кнопки
 document.addEventListener("keydown", (event) => {
     switch (event.code) {
         case 'Escape':
             break
-
+        case 'Enter':
+            break
     }
+})
+send_button.addEventListener('click', (event) => {
+    send_messages()
 })
 
 submit_auth.forEach((button) => {

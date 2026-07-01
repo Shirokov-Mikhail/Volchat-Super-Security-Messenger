@@ -27,24 +27,22 @@ socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False)
 
 @app.route('/')
 def index():
-    print('/', session)
     return render_template('index.html')
 
 
 @socketio.on('connect')
 def authorization_check():
-    print('connect', session)
     if 'login' in session and session['login'] != '':
         login = session['login']
         db = DataBaseLoader(mysql)
         if db.auth(login):
-            socketio.emit('auth', {'status': 'success',
+            emit('auth', {'status': 'success',
                                    'id': db.id,
                                    'key-verifi': db.message,
                                    'key': db.key
                                    })
         else:
-            socketio.emit('auth', {
+            emit('auth', {
                 'status': 'error'
             })
 
@@ -64,8 +62,7 @@ def handle_connect(data):
         data['clients'] = db.loadChats(id)
         session['auth'] = True
         session['id'] = id
-        print('clients ', data['clients'], 'len s')
-        socketio.emit('start-session', data)
+        emit('start-session', data)
 
     except Exception as e:
         data = {
@@ -73,7 +70,7 @@ def handle_connect(data):
             "clients": [],
             'error': e
         }
-        socketio.emit('start-session', data)
+        emit('start-session', data)
 
 
 # супер нужная функция
@@ -83,29 +80,40 @@ def user_load_messages(data):
     db = DataBaseLoader(mysql)
     login.capitalize()
     if db.auth(login):
-        socketio.emit('auth', {'status': 'success',
+        emit('auth', {'status': 'success',
                                'id': db.id,
                                'key-verifi': db.message,
                                'key': db.key
                                })
     else:
-        socketio.emit('auth', {
+        emit('auth', {
             'status': 'error'
         })
 
 
 @socketio.on('load-chat')
 def load_chat(data):
-    db = DataBaseLoader(mysql)
-    out, into = db.loadMessages(data['user_id'], data['chat_id'])
-    friend_login = db.load_Friends_Info(data['user_id'], data['chat_id'])
-    friend_id = db.friend_id
-    emit('load-chat', {'status': 'success',
+    try:
+        db = DataBaseLoader(mysql)
+        out, into, all = db.loadMessages(data['user_id'], data['chat_id'])
+        friend_login = db.load_Friends_Info(data['user_id'], data['chat_id'])
+        friend_id = db.friend_id
+        emit('load-chat', {'status': 'success',
                        'out': list(out),
                        'into': list(into),
+                       'all': list(all),
                        'friend_login': friend_login,
                        'friend_id': friend_id
                        })
+    finally:
+        emit('load-chat', {'status': 'error',
+                           'out': list(),
+                           'into': list(),
+                           'all': list(),
+                           'friend_login': 'friend_login',
+                           'friend_id': 'friend_id'
+                           })
+
 
 
 @socketio.on('registration-check')
@@ -114,9 +122,9 @@ def register(data):
     db = DataBaseLoader(mysql)
     login.capitalize()
     if db.check_login(login):
-        socketio.emit('registration-check', {'status': 'success'})
+        emit('registration-check', {'status': 'success'})
     else:
-        socketio.emit('registration-check', {'status': 'error'})
+        emit('registration-check', {'status': 'error'})
 
 
 @socketio.on('registration')
@@ -129,61 +137,32 @@ def registration(data):
 
     if db.registration(login, public_key, private_key, test_message):
         id = db.select_id(login)
-        socketio.emit('registration', {'status': 'success',
+        emit('registration', {'status': 'success',
                                        'id': id})
     else:
-        socketio.emit('registration', {'status': 'error'})
+        emit('registration', {'status': 'error'})
 
 
-# устарело уберу потом
-@app.route('/auth')
-def auth():
-    return render_template('/pages/auth.html', login_error='none', password_error='none')
-
-
-@app.route('/auth', methods=['POST'])
-def users_post():
-    db = DB(mysql)
-    login = request.form.get('email')
-    password = request.form.get('password')
-
-    if '@' in login and db.auth(password, mail=login):
-        session['auth'] = True
-        session['id'] = db.id
-        session["auth"] = True
-        print('auth ', session['auth'])
-        return redirect('/')
-    elif '+' in login and db.auth(password, tel=login):
-        session['auth'] = True
-        session['id'] = db.id
-        return redirect('/')
-    elif db.auth(password, login=login):
-        session['auth'] = True
-        session['id'] = db.id
-        return redirect('/')
-    return render_template('/pages/auth.html', login_error='none', password_error='none')
-
-
-@app.route('/registration')
-def rg():
-    return render_template('/pages/registration.html', login_error='none')
-
-
-@app.route('/registration/', methods=['POST'])
-def rg_post():
-    db = DB(mysql)
-    print(request.form.get('public-login'))
-    if request.form.get('email') and db.registartion(request.form.get('public-login'), request.form.get('password'),
-                                                     mail=request.form.get('email')):
-        session['auth'] = True
-        session['id'] = db.id
-        return redirect(url_for('auth'))
-    elif request.form.get('phone') and db.registartion(request.form.get('public-login'), request.form.get('password'),
-                                                       tel=request.form.get('phone')):
-        session['auth'] = True
-        session['id'] = db.id
-        return redirect(url_for('auth'))
-    return render_template('/pages/registration.html', login_error='none')
+@socketio.on('send-message')
+def sending_messages(data):
+    message = data['message']
+    user_id = data['user_id']
+    chat_id = data['chat_id']
+    db = DataBaseLoader(mysql)
+    if db.send_messages(message, user_id, chat_id):
+        db = DataBaseLoader(mysql)
+        out, into, all = db.loadMessages(user_id, chat_id)
+        friend_login = db.load_Friends_Info(user_id, chat_id)
+        friend_id = db.friend_id
+        emit('load-chat', {'status': 'success',
+                           'out': list(out),
+                           'into': list(into),
+                           'all': list(all),
+                           'friend_login': friend_login,
+                           'friend_id': friend_id
+                           })
+    else:
+        emit('load-chat', {'status': 'error'})
 
 
 if __name__ == '__main__':
