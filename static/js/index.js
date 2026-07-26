@@ -38,6 +38,10 @@ const password_2 = document.getElementById("password-repeat");
 const login_error = document.getElementById("reg-error");
 const password_repeat_error = document.getElementById("password-error");
 
+const new_chat_btn = document.getElementById("new-chat-btn");
+const new_chat_panel = document.getElementById("new-chat-panel");
+
+
 // подгрузка чатов сервер сам поймет что сессии нет
 let username_local;
 let user_id;
@@ -47,6 +51,8 @@ let current_chat_id;
 let privatekey;
 let publickey;
 let active_chat_id;
+let new_chat_activity = false;
+let users_selected = [];
 // подгрузка чатов
 const socket = io("http://127.0.0.1:5000");
 socket.on('start-session', function(data) {
@@ -66,7 +72,7 @@ socket.on('start-session', function(data) {
             contacts.innerHTML += `<button onclick="openChat(${data['clients'][key][0]}, ${key})" class="chat-panel-element">
       <p class="text">${data['clients'][key][1]}</p> </button>`;
         }
-        contacts.innerHTML += `<button class="chat-panel-element" id="new-chat-btn">
+        contacts.innerHTML += `<button class="chat-panel-element" id="new-chat-btn" onclick="newChat()">
       <p class="text">Новый чат +</p>
     </button>`
     }
@@ -167,15 +173,13 @@ function loadChat(chat_id) {
         'user_id': user_id});
 }
 socket.on('load-chat', function(data){
-    if (data['status'] === 'success') {
+    if (data['status'] === 'success' && !new_chat_activity) {
         chat_page.style.display = 'flex'
         username.textContent = data['friend_login'];
 
         const into = data['into'] || [];
         const out = data['out'] || [];
-        const all_messages = data['all'];
-        // лютая сортировочка от мистера интелекта
-        const allKeys = [...Object.keys(into), ...Object.keys(out)].sort((a, b) => a - b);
+        const all_messages = data['all'] || [];
 
         let htmlContent = '';
 
@@ -205,7 +209,7 @@ socket.on('load-chat', function(data){
         setTimeout(() => {
             scrollContainer.scrollTop = scrollContainer.scrollHeight;
         }, 10);
-        setTimeout(updateChat, 10000)
+
     }
 })
 
@@ -223,6 +227,8 @@ function send_messages() {
         })
     }
 }
+
+
 
 // все что ниже нужно переписать
 
@@ -250,23 +256,112 @@ function openChat(all_id, id) {//id чата, id уже не помню чего
       <p class="text">${chats[key][1]}</p> </button>`;
         }
     }
-    contacts.innerHTML += `<button class="chat-panel-element" id="new-chat-btn">
+    contacts.innerHTML += `<button class="chat-panel-element" id="new-chat-btn" onclick="newChat()">
       <p class="text">Новый чат +</p>
     </button>`
 
 }
-function clearMessages(){
-    if(active_chat_id){
-
-    }
-}
-
 // до сюда примерно
 function updateChat(){
     loadChat(current_chat_id)
-    setTimeout(updateChat, 10000)
+    if (!new_chat_activity) {
+        setTimeout(updateChat, 10000)
+
+    }
+}
+function closeNewChat(){
+    new_chat_panel.style.display = "none";
+    new_chat_activity = false
+    users_selected = []
+    send_message.value = '';
+    username.textContent = ''
+
+    openChat(-1, -1)
+}
+function newChat(){
+    console.log('asd new chat')
+    new_chat_panel.style.display = "flex"
+    start_panel.style.display = "none"
+    main_chat_panel.style.filter = "none";
+    messages_list.innerHTML = ''
+    username.textContent = 'Твой новый чат'
+    send_message.value = 'Твой новый чат'
+    new_chat_activity = true
+    socket.emit('need-members', {})
+}
+let famous_users = []
+function updateNewChatContacts(data){
+    new_chat_panel.innerHTML = ''
+    famous_users = data
+    let htmlContent = `
+        <!-- Шапка: кнопка назад и поиск -->
+            <div class="search-chat-header">
+                <button onclick="closeNewChat()" class="chat-panel-element btn-back">
+                    <p class="text"><-</p>
+                </button>
+                <input type="text" id="search-user" class="input-search" placeholder="Найти по нику...">
+            </div>
+
+            <!-- Блок ошибки -->
+            <div class="input-block">
+                <p class="error" id="user-not-found" style="text-align: center;">Такого пользователя не существует</p>
+            </div>
+
+            <!-- Заголовок списка -->
+            <div class="chat-panel-element contacts-title">
+                <h2 class="title">Известные контакты</h2>
+            </div>
+
+            <!-- Список известных контактов -->`;
+
+    for (let i = 0; i < data['members'].length; i++) {
+        if(users_selected.includes(Number(data['members'][i][0]))){
+            htmlContent += `<button class="chat-panel-element active-user" onclick="new_chat_button_active(${data['members'][i][0]})">
+                
+                <h2 class="text">${data['members'][i][1]}</h2>
+            </button>`
+        }else {
+            htmlContent += `<button class="chat-panel-element" onclick="new_chat_button_active(${data['members'][i][0]})">
+                
+                <h2 class="text">${data['members'][i][1]}</h2>
+            </button>`
+        }
+
+        //<img src="../../static/image/logo.png" alt="Волчат">
+    }
+    new_chat_panel.innerHTML += htmlContent;
+}
+socket.on('need-members', function(data){
+    if (data['status'] === 'success') {
+        updateNewChatContacts(data)
+    }
+})
+socket.on('make_new_chat', function (data){
+    if (data['status'] === 'success') {
+      //   const newDiv = `<button onclick="openChat(${data['chat_id']}, -1)" class="chat-panel-element">
+      // <p class="text">${data['chat_name']}</p> </button>`
+      //   contacts.insertAdjacentHTML('beforeend', newDiv);
+        chats.push([data['chat_id'], data['chat_name']])
+        openChat(data['chat_id'], chats.length - 1)
+    }
+})
+function new_chat_button_active(user_id){
+    users_selected = [user_id]
+    console.log(famous_users)
+    updateNewChatContacts(famous_users)
+    // if (user_id in users_selected)
+    // {users_selected.splice(users_selected.indexOf(user_id), 1);}
+    // else{
+    //     users_selected.push(user_id)
+    // }
+
 }
 // кнопки
+// new_chat_btn.addEventListener('click', (event) => {
+//     new_chat_panel.style.display = "flex";
+// })
+
+
 document.addEventListener("keydown", (event) => {
     switch (event.code) {
         case 'Escape':
@@ -276,8 +371,22 @@ document.addEventListener("keydown", (event) => {
     }
 })
 send_button.addEventListener('click', (event) => {
-    send_messages()
+    if (!new_chat_activity){
+        send_messages()
+    }
+    else{
+        console.log('user', user_id)
+        socket.emit('make_new_chat', {
+            'users': users_selected,
+            'user_id': Number(user_id),
+            'name': send_message.value
+        })
+
+        closeNewChat()
+
+    }
 })
+
 
 submit_auth.forEach((button) => {
     button.addEventListener('click', (event) => {
@@ -305,4 +414,9 @@ x_close.addEventListener("click", () => {
     auth_form.style.display = "none";
 
 
+})
+send_message.addEventListener('input', (event) => {
+    if (new_chat_activity){
+        username.textContent = send_message.value;
+    }
 })

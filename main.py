@@ -59,6 +59,7 @@ def handle_connect(data):
             'error': None
         }
         db = DataBaseLoader(mysql)
+
         data['clients'] = db.loadChats(id)
         session['auth'] = True
         session['id'] = id
@@ -93,10 +94,15 @@ def user_load_messages(data):
 
 @socketio.on('load-chat')
 def load_chat(data):
+    db = None
     try:
+
         db = DataBaseLoader(mysql)
+
         out, into, all = db.loadMessages(data['user_id'], data['chat_id'])
+
         friend_login = db.load_Friends_Info(data['user_id'], data['chat_id'])
+
         friend_id = db.friend_id
         emit('load-chat', {'status': 'success',
                        'out': list(out),
@@ -105,7 +111,12 @@ def load_chat(data):
                        'friend_login': friend_login,
                        'friend_id': friend_id
                        })
+    except Exception as e:
+        print('load-chat', e)
+
     finally:
+        if db:
+            db.close()
         emit('load-chat', {'status': 'error',
                            'out': list(),
                            'into': list(),
@@ -113,8 +124,6 @@ def load_chat(data):
                            'friend_login': 'friend_login',
                            'friend_id': 'friend_id'
                            })
-
-
 
 @socketio.on('registration-check')
 def register(data):
@@ -143,6 +152,7 @@ def registration(data):
         emit('registration', {'status': 'error'})
 
 
+
 @socketio.on('send-message')
 def sending_messages(data):
     message = data['message']
@@ -163,6 +173,45 @@ def sending_messages(data):
                            })
     else:
         emit('load-chat', {'status': 'error'})
+
+@socketio.on('need-members')
+def need_members(data):
+    try:
+        db = DataBaseLoader(mysql)
+        members = db.open_all_members_names()
+        emit('need-members', {'status': 'success',
+                          'members': members
+                          })
+    except Exception as e:
+        print('need-members error:', e)
+
+    finally:
+        emit('need-members', {'status': 'error', 'members': []})
+
+@socketio.on('make_new_chat')
+def make_new_chat(data):
+    try:
+        db = DataBaseLoader(mysql)
+        users_id = data['users']
+        print('us id', users_id)
+        owner_id = [data['user_id']]
+        print('ow id', owner_id)
+        users_id = owner_id + users_id
+        print(321123)
+        chat_id, chat_name = db.new_chat(str(data['name']), users_id)
+        print('chat_name', chat_name)
+
+        if chat_name:
+            print('daaa')
+            emit('make_new_chat', {'status': 'success',  'chat_id': chat_id,
+                                   'chat_name': chat_name})
+            load_chat({
+                'chat_id': chat_id,
+                'user_id': owner_id})
+        emit('make_new_chat', {'status': 'unsuccess'})
+
+    except Exception as e:
+        print('make_new_chat error:', e)
 
 
 if __name__ == '__main__':

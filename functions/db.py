@@ -90,7 +90,7 @@ class DB:
                 chats.append(self.open_chats_element(i[0]))
             return chats
         except Exception as e:
-            print(e)
+            print('view_chats', e)
             return []
 
     def add_messages(self, sender:int, message:str, chat_id:int):
@@ -99,7 +99,7 @@ class DB:
             self.mysql.connection.commit()
             return True
         except Exception as e:
-            print(e)
+            print('add_messages', e)
             return False
 
 class DataBaseLoader:
@@ -162,6 +162,7 @@ class DataBaseLoader:
         try:
             self.cur.execute(f'''SELECT `chat_id` FROM `chat_members` WHERE `user_id`='{user_id}' ''')
             chat_ids = [i[0] for i in self.cur.fetchall()]
+
             return chat_ids
         except Exception as e:
             print('load-chat-member', e)
@@ -170,13 +171,15 @@ class DataBaseLoader:
     def loadChats(self, user_id):
         try:
             chats = []
+
             for i in self.load_chat_member(user_id):
                 self.cur.execute(f'''SELECT `id`, `name` FROM `chats` WHERE `id`='{i}'; ''')
                 info = self.cur.fetchone()
+
                 chats.append((info[0], info[1]))
             return chats
         except Exception as e:
-            print(e)
+            print('loadChats', e)
             return []
 
     def loadMessages(self, user_id:int, chat_id:int):
@@ -190,13 +193,14 @@ class DataBaseLoader:
             return out, into, all
         except Exception as e:
             print('load-messages', e)
-            return [], []
+            return [], [], []
 
     #Только когда в чате 2 человек
     def serchUserInfo(self, user_id, chat_id):
         try:
+
             self.cur.execute(f'''SELECT `user_id` FROM `chat_members` WHERE `user_id` <> '{user_id}' AND `chat_id`='{chat_id}';''')
-            self.friend_id = self.cur.fetchone()[0]
+            self.friend_id = list(filter(lambda x: x != 0, [i[0] for i in self.cur.fetchall()]))[0]
 
             return True
         except Exception as e:
@@ -206,6 +210,7 @@ class DataBaseLoader:
     def load_Friends_Info(self, user_id, chat_id):
         try:
             if self.serchUserInfo(user_id, chat_id):
+
                 self.cur.execute(f''' SELECT `Login` FROM `users` WHERE `id`='{self.friend_id}';''')
                 friend_login = self.cur.fetchone()[0]
                 return friend_login
@@ -226,3 +231,63 @@ class DataBaseLoader:
         except Exception as e:
             print('send messages', e)
             return False
+
+
+    def generate_chat_members(self, chat_id, members:list):
+        try:
+
+            for member in members:
+                self.cur.execute(f'''INSERT INTO `chat_members`(`chat_id`, `user_id`) VALUES ('{chat_id}','{member}')''')
+            self.mysql.connection.commit()
+            return True
+        except Exception as e:
+            print('generate', e)
+            self.close()
+            return False
+
+
+
+    def new_chat(self, name:str, members:list, desk=None, type='lockal'):
+        try:
+            while_koef = 0
+            self.cur.execute(f'''SELECT EXISTS(SELECT 1 FROM chats WHERE `name` = '{name}');''')
+            if int(self.cur.fetchall()[0][0]) == int(0):
+                self.cur.execute(f'''INSERT INTO `chats`(`name`, `type`, `description`) VALUES ('{name}','{type}','{desk}')''')
+            else:
+                while int(self.cur.fetchall()[0][0]) == int(1):
+                    self.cur.execute(f'''SELECT EXISTS(SELECT 1 FROM chats WHERE `name` = '{name}_{while_koef}');''')
+                    if int(self.cur.fetchall()[0][0]) == int(0):
+                        self.cur.execute(f'''INSERT INTO `chats`(`name`, `type`, `description`) VALUES ('{name}_{while_koef}','{type}','{desk}')''')
+                        break
+                    while_koef += 1
+            print(name, while_koef)
+            self.mysql.connection.commit()
+            if (while_koef != 0):
+                self.cur.execute(f''' SELECT `id` FROM chats WHERE `name` = '{name}_{while_koef}'; ''')
+            else:
+                self.cur.execute(f''' SELECT `id` FROM chats WHERE `name` = '{name}'; ''')
+            chat_id = self.cur.fetchone()[0]
+            print('chat_id', chat_id)
+            if self.generate_chat_members(chat_id, members):
+                return chat_id, name
+        # memebers[0] всегда тот кто создает чат
+        # members - id участников чата
+
+            return -1, ''
+
+        except Exception as e:
+            print('new chat', e)
+            return -1, ''
+
+    def open_all_members_names(self):
+        try:
+            self.cur.execute(f'''SELECT `id`, `Login` FROM `users`''')
+            all_users = [(i[0], i[1]) for i in self.cur.fetchall()]
+            return all_users
+        except Exception as e:
+            print('open all members names', e)
+            return []
+
+    def close(self):
+        if self.cur:
+            self.cur.close()

@@ -67,11 +67,12 @@ body, html {
 }
 .absolut{
     position: absolute;
-    top: 7%;
+    top: 0;
     left: 41%;
     background-color: var(--main-fone-color);
-    box-shadow: 0px 0px 20px 5px #252675;
-    height: 50%;
+    /*box-shadow: 0px 0px 20px 5px #252675;*/
+
+    height: 60% !important;
 }
 .x{
     width: 100%;
@@ -241,11 +242,20 @@ footer{
     width: 55%;
 }
 input {
-    width: 100%;
+    align-self: center;
+    width: 80%;
     border: 1px solid var(--main-font-color);
     border-radius: 10px;
     padding: 5px;
     margin: 5px;
+}
+#send-message{
+    width: 50%;
+    border: 2px solid var(--main-font-color);
+    border-radius: 10px;
+    padding: 5px;
+    font-size: 16px;
+    font-family: var(--title-font);
 }
 .error{
     color: var(--main-font-color);
@@ -335,7 +345,7 @@ label{
 }
 .chat-panel-element{
     display: flex;
-    justify-content: space-evenly;
+    justify-content: space-around;
     height: 80px;
     width: 100%;
     background-color: transparent;
@@ -348,6 +358,17 @@ label{
     border: 1px;
     border-radius: 10px;
     cursor: pointer;
+}
+.active-user{
+    background-color: revert;
+    color: black !important;
+    .text{
+        color: black;
+    }
+    .title{
+
+        color: black !important;
+    }
 }
 .active-chat{
     background-color: revert;
@@ -549,4 +570,53 @@ label{
 * {
     scrollbar-width: thin; /* Тонкий скролл */
     scrollbar-color: #333333 #0a0a0a; /* цвет-ползунка цвет-дорожки */
+}
+/* Делаем родительский контейнер относительным, чтобы панель не улетала за края */
+.chat-page {
+    position: relative;
+}
+
+/* Класс для панели, которая выезжает ровно поверх списка чатов слева */
+.chats-panel-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 20%; /* Строго 20%, как у основной chats-panel */
+    height: 100%;
+    background-color: var(--main-fone-color);
+    z-index: 10;
+}
+
+/* Стили для шапки поиска */
+.search-chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 10px;
+}
+
+/* Кнопка "назад" */
+.btn-back {
+    width: 25%;
+    height: 50px;
+    margin: 0;
+    justify-content: center;
+    padding: 0;
+}
+
+/* Поле ввода */
+.input-search {
+    width: 70%;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+/* Заголовок "Известные контакты" */
+.contacts-title {
+    cursor: default;
+    justify-content: center;
+    height: auto;
+}
+.contacts-title h2 {
+    font-size: 20px;
 }

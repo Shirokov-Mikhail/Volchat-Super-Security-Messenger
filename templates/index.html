@@ -36,24 +36,6 @@
                 <div class="input-block"><button class="close button" id="close-register">X</button></div>
             </div>
             <div class="inputs">
-<!--                <div class="input-block" id="email_block">-->
-<!--                    <label for="email-for-x-rg">Email</label>-->
-<!--                    <input type="email" id="email-for-x-rg" name="email" required placeholder="myEmail@volchat.ru">-->
-<!--                    <p class="error" style="display: {{ login_error }}">Пользователь с таким Email уже существует</p>-->
-<!--                    <div class="slise">-->
-<!--                        <p><button class="text smaller-text" id="toTel">Зарегистрироваться по телефону</button></p>-->
-<!--                    </div>-->
-<!--                </div>-->
-
-<!--                <div class="input-block" id="tel_block" style="display: none">-->
-<!--                    <label for="phone">Телефон</label>-->
-<!--                    <input type="tel" id="phone" name="phone" placeholder="+79809809080">-->
-<!--                    <p class="error" style="display: {{ login_error }}">Пользователь с таким телефоном уже существуетй</p>-->
-<!--                    <div class="slise">-->
-<!--                        <p><button id="toEmail" class="text smaller-text">Зарегистрироваться по Email</button></p>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--                -->
                 <div class="input-block">
                     <label for="login">Ваш Имя пользователя (Логин) *</label>
                     <input type="text" id="login" name="public-login" required placeholder="myName" minlength="3" maxlength="10">
@@ -167,7 +149,7 @@
                     <div class="files-send-panel">
                     </div>
                     <input type="text" id="send-message" placeholder="Введите сообщение...">
-                    <button class="" id="send-button"><img class="send-img" src="../../static/image/logo.png"></button>
+                    <button class="" id="send-button"><img class="send-img" src="../../static/image/send_message_logo_test.png"></button>
                 </div>
             </div>
         </div>
@@ -177,7 +159,39 @@
                 <h2 class="title white"> Выберите чат чтобы начать общение <br> Или добавьте новый</h2>
             </div>
         </div>
+
+
+
+        <!--       тут -->
+        <div class="chats-panel chats-panel-overlay" id="new-chat-panel" style="display: none;">
+
+            <!-- Шапка: кнопка назад и поиск -->
+            <div class="search-chat-header">
+                <button onclick="closeNewChat()" class="chat-panel-element btn-back">
+                    <p class="text"><-</p>
+                </button>
+                <input type="text" id="search-user" class="input-search" placeholder="Найти по нику...">
+            </div>
+
+            <!-- Блок ошибки -->
+            <div class="input-block">
+                <p class="error" id="user-not-found" style="text-align: center;">Такого пользователя не существует</p>
+            </div>
+
+            <!-- Заголовок списка -->
+            <div class="chat-panel-element contacts-title">
+                <h2 class="title">Известные контакты</h2>
+            </div>
+
+            <!-- Список известных контактов -->
+
+
+        </div>
+        <!-- тут -->
+
+
     </div>
+
 </main>
 <footer class="container">
     {% for i in [('реклама', 'ads'), ('о на', 'about')]%}
