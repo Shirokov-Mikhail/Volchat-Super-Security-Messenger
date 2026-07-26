@@ -193,14 +193,12 @@ def make_new_chat(data):
     try:
         db = DataBaseLoader(mysql)
         users_id = data['users']
-        print('us id', users_id)
         owner_id = [data['user_id']]
-        print('ow id', owner_id)
+        chat_type = 'lockal'
+        if len(data['users']) > 1:
+            chat_type = 'multi'
         users_id = owner_id + users_id
-        print(321123)
-        chat_id, chat_name = db.new_chat(str(data['name']), users_id)
-        print('chat_name', chat_name)
-
+        chat_id, chat_name = db.new_chat(str(data['name']), users_id, type=chat_type)
         if chat_name:
             print('daaa')
             emit('make_new_chat', {'status': 'success',  'chat_id': chat_id,
