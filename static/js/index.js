@@ -1,9 +1,9 @@
 // pages
 const start_page = document.getElementById("start-page");
 const chat_page = document.getElementById("chat-page");
+const footer = document.getElementById("footer");
 
-
-
+// x-bnt and form in start page
 const register_button = document.getElementById("register-btn");
 const register_form = document.getElementById("register");
 const x_register = document.getElementById("close-register");
@@ -14,7 +14,7 @@ const x_close = document.getElementById("close_auth");
 
 const contacts = document.getElementById("contacts");
 
-// Пока не используется
+
 const username = document.getElementById("name");
 const messages_list = document.getElementById("messages");
 const send_button = document.getElementById("send-button");
@@ -57,6 +57,7 @@ let users_selected = [];
 const socket = io("http://127.0.0.1:5000");
 socket.on('start-session', function(data) {
     if (data['status'] === 200){
+        footer.style.display = "none";
         start_page.style.display = "none";
 
         chat_page.style.display = "flex";
@@ -69,10 +70,10 @@ socket.on('start-session', function(data) {
         for (let key in data['clients']) {
             chats.push(data['clients'][key]);
             console.log(data['clients'][key]);
-            contacts.innerHTML += `<button onclick="openChat(${data['clients'][key][0]}, ${key})" class="chat-panel-element">
+            contacts.innerHTML += `<button onclick="openChat(${data['clients'][key][0]}, ${key})" class="chat-panel-element chat-panel-hover">
       <p class="text">${data['clients'][key][1]}</p> </button>`;
         }
-        contacts.innerHTML += `<button class="chat-panel-element" id="new-chat-btn" onclick="newChat()">
+        contacts.innerHTML += `<button class="chat-panel-element chat-panel-hover" id="new-chat-btn" onclick="newChat()">
       <p class="text">Новый чат +</p>
     </button>`
     }
@@ -180,7 +181,7 @@ socket.on('load-chat', function(data){
         const into = data['into'] || [];
         const out = data['out'] || [];
         const all_messages = data['all'] || [];
-
+        send_message.value = '';
         let htmlContent = '';
 
         all_messages.forEach(key => {
@@ -220,6 +221,7 @@ function send_messages() {
         // шифруем сообщение
 
         // на публичный ключ союеседника
+
         socket.emit('send-message', {
             'message': message,
             'user_id': user_id,
@@ -252,11 +254,11 @@ function openChat(all_id, id) {//id чата, id уже не помню чего
       <p class="text">${chats[key][1]}</p> </button>`;
         }
         else {
-            contacts.innerHTML += `<button onclick="openChat(${chats[key][0]}, ${key})" class="chat-panel-element">
+            contacts.innerHTML += `<button onclick="openChat(${chats[key][0]}, ${key})" class="chat-panel-element chat-panel-hover">
       <p class="text">${chats[key][1]}</p> </button>`;
         }
     }
-    contacts.innerHTML += `<button class="chat-panel-element" id="new-chat-btn" onclick="newChat()">
+    contacts.innerHTML += `<button class="chat-panel-element chat-panel-hover" id="new-chat-btn" onclick="newChat()">
       <p class="text">Новый чат +</p>
     </button>`
 
@@ -295,12 +297,18 @@ function updateNewChatContacts(data){
     famous_users = data
     let htmlContent = `
         <!-- Шапка: кнопка назад и поиск -->
-            <div class="search-chat-header">
-                <button onclick="closeNewChat()" class="chat-panel-element btn-back">
-                    <p class="text"><-</p>
+        <div class="search-chat-header">
+                <button onclick="closeNewChat()" class="chat-panel-element btn-back close button" style="align-self: flex-end">
+                   <-
                 </button>
                 <input type="text" id="search-user" class="input-search" placeholder="Найти по нику...">
             </div>
+<!--            <div class="search-chat-header">-->
+<!--                <button onclick="closeNewChat()" class="chat-panel-element btn-back">-->
+<!--                    <p class="text"><-</p>-->
+<!--                </button>-->
+<!--                <input type="text" id="search-user" class="input-search" placeholder="Найти по нику...">-->
+<!--            </div>-->
 
             <!-- Блок ошибки -->
             <div class="input-block">
@@ -321,7 +329,7 @@ function updateNewChatContacts(data){
                 <h2 class="text">${data['members'][i][1]}</h2>
             </button>`
         }else {
-            htmlContent += `<button class="chat-panel-element" onclick="new_chat_button_active(${data['members'][i][0]})">
+            htmlContent += `<button class="chat-panel-element chat-panel-hover" onclick="new_chat_button_active(${data['members'][i][0]})">
                 
                 <h2 class="text">${data['members'][i][1]}</h2>
             </button>`

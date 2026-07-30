@@ -67,12 +67,14 @@ body, html {
 }
 .absolut{
     position: absolute;
+    align-items: start !important;
     top: 0;
     left: 41%;
+    /*background-color: transparent;*/
     background-color: var(--main-fone-color);
     /*box-shadow: 0px 0px 20px 5px #252675;*/
 
-    height: 60% !important;
+    height: 70%;
 }
 .x{
     width: 100%;
@@ -83,10 +85,26 @@ body, html {
     height: 45%;
     align-items: center;
 }
-.close{
+.close {
+    display: flex;
+    align-items: center;
     cursor: pointer;
-    border: none;
+    width: 45px !important;
+    height: 45px !important;
+    border: 1px solid transparent;
+    border-radius: 60px;
+    background-color: #131313 !important;
+    color: white;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
+.close:hover {
+    background-color: white !important;
+    color: black;
+}
+/*.close:focus {*/
+/*    background-color: white;*/
+/*    color: black;*/
+/*}*/
 .gradient-image{
     background: radial-gradient(circle, #252675 0%, transparent 60%);
     width: 38%;
@@ -190,7 +208,7 @@ body{
 
 }
 .super-title{
-    font-size: 60px !important;
+    font-size: 60px;
     text-transform: uppercase;
 }
 .slider-image{
@@ -251,11 +269,18 @@ input {
 }
 #send-message{
     width: 50%;
-    border: 2px solid var(--main-font-color);
-    border-radius: 10px;
-    padding: 5px;
-    font-size: 16px;
+    border: 2px solid transparent;
+    border-radius: 20px;
+    padding: 14px;
+    font-size: 18px;
+    background-color: #161614;
+    color: var(--main-font-color);
     font-family: var(--title-font);
+}
+.input-type-button{
+    font-size: 16px;
+    padding: 10px;
+
 }
 .error{
     color: var(--main-font-color);
@@ -356,7 +381,6 @@ label{
         width: auto;
     }
     border: 1px;
-    border-radius: 10px;
     cursor: pointer;
 }
 .active-user{
@@ -370,10 +394,34 @@ label{
         color: black !important;
     }
 }
+.active-user:hover{
+    background-color: transparent;
+    backdrop-filter: contrast(0.01);
+    color: contrast-color(gray) !important;
+    .text{
+        color: contrast-color(gray);
+    }
+    .title{
+
+        color: contrast-color(gray) !important;
+    }
+}
 .active-chat{
     background-color: revert;
     .text{
         color: black;
+    }
+}
+.active-chat:hover{
+    background-color: transparent;
+    backdrop-filter: contrast(0.01);
+    color: contrast-color(gray) !important;
+    .text{
+        color: contrast-color(gray);
+    }
+    .title{
+
+        color: contrast-color(gray) !important;
     }
 }
 .chat-title-panel{
@@ -450,6 +498,7 @@ label{
 }
 .chat-panel-element{
     margin: 0;
+    margin-top: 2px;
     padding: 0;
 }
 .send-img{
@@ -467,6 +516,14 @@ label{
 
 
 }
+.chat-panel-hover:hover{
+    .text{
+        color: black;
+    }
+    background-color: white;
+
+}
+
 .message-content{
     display: flex;
     flex-wrap: wrap;
@@ -487,59 +544,89 @@ label{
 .anim.fade-out {
     opacity: 0;
 }
-@media (max-width: 1200px){
-    .subscriptions{
-        display: flex;
-        justify-content: center;
+@media (max-width: 2300px) {
+    .absolut{
+        width: 50%;
+        height: 80%;
+
     }
-    .nav-element{
-        font-size: 20px;
+    .super-title{
+        font-size: 55px;
     }
-    .title{
-        font-size: 20px;
-    }
+
 }
-@media (max-width: 1000px){
-    .nav-element{
-        font-size: 18px;
+@media (max-width: 1800px){
+    /*.subscriptions{*/
+    /*    display: flex;*/
+    /*    justify-content: center;*/
+    /*}*/
+    /*.nav-element{*/
+    /*    font-size: 22px;*/
+    /*}*/
+    /*.title{*/
+    /*    font-size: 22px;*/
+    /*}*/
+    .absolut{
+        left: 48%;
+        justify-content: left;
     }
-    .title{
-        font-size: 18px;
-    }
-    .text{
-        font-size: 14px;
-    }
-    .button{
-        font-size: 14px;
-    }
-    .logo{
-        width: 40px;
-        height: auto;
-    }
-    main > *{
-        width: 80%;
-    }
+
+
 }
-@media (max-width: 900px){
-    main > *{
-        width: 90%;
-    }
-    main{
-        justify-content: center;
-    }
-}
-@media (max-width: 800px){
-    main > *{
-        width: 99%;
-    }
-}
-@media print {
-    html, body{
-        height: 297mm;
-        width: 210mm;
-        filter: grayscale(100%);
-    }
-}
+
+/*@media (max-width: 1200px){*/
+/*    .subscriptions{*/
+/*        display: flex;*/
+/*        justify-content: center;*/
+/*    }*/
+/*    .nav-element{*/
+/*        font-size: 20px;*/
+/*    }*/
+/*    .title{*/
+/*        font-size: 20px;*/
+/*    }*/
+/*}*/
+/*@media (max-width: 1000px){*/
+/*    .nav-element{*/
+/*        font-size: 18px;*/
+/*    }*/
+/*    .title{*/
+/*        font-size: 18px;*/
+/*    }*/
+/*    .text{*/
+/*        font-size: 14px;*/
+/*    }*/
+/*    .button{*/
+/*        font-size: 14px;*/
+/*    }*/
+/*    .logo{*/
+/*        width: 40px;*/
+/*        height: auto;*/
+/*    }*/
+/*    main > *{*/
+/*        width: 80%;*/
+/*    }*/
+/*}*/
+/*@media (max-width: 900px){*/
+/*    main > *{*/
+/*        width: 90%;*/
+/*    }*/
+/*    main{*/
+/*        justify-content: center;*/
+/*    }*/
+/*}*/
+/*@media (max-width: 800px){*/
+/*    main > *{*/
+/*        width: 99%;*/
+/*    }*/
+/*}*/
+/*@media print {*/
+/*    html, body{*/
+/*        height: 297mm;*/
+/*        width: 210mm;*/
+/*        filter: grayscale(100%);*/
+/*    }*/
+/*}*/
 
 /* Вайб код настройки скроло */
 /* Настройки для Chrome, Edge, Safari, Opera */
@@ -591,13 +678,13 @@ label{
 .search-chat-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: space-evenly;
     margin: 10px;
 }
 
 /* Кнопка "назад" */
 .btn-back {
-    width: 25%;
+
     height: 50px;
     margin: 0;
     justify-content: center;

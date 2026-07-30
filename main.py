@@ -1,6 +1,6 @@
 from flask_mysqldb import MySQL
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, join_room
 from functions.db import DB, DataBaseLoader
 
 from flask_session import Session
@@ -102,6 +102,9 @@ def load_chat(data):
         out, into, all = db.loadMessages(data['user_id'], data['chat_id'])
 
         friend_login = db.load_Friends_Info(data['user_id'], data['chat_id'])
+        room_name = f"chat_{data['chat_id']}"
+        join_room(room_name)
+
 
         friend_id = db.friend_id
         emit('load-chat', {'status': 'success',
@@ -164,29 +167,43 @@ def sending_messages(data):
         out, into, all = db.loadMessages(user_id, chat_id)
         friend_login = db.load_Friends_Info(user_id, chat_id)
         friend_id = db.friend_id
+        room_name = f"chat_{chat_id}"
         emit('load-chat', {'status': 'success',
                            'out': list(out),
                            'into': list(into),
                            'all': list(all),
                            'friend_login': friend_login,
-                           'friend_id': friend_id
-                           })
+                           'friend_id': friend_id,
+                           }, to=room_name)
     else:
         emit('load-chat', {'status': 'error'})
 
+# @socketio.on('need-members')
+# def need_members(data):
+#     try:
+#         db = DataBaseLoader(mysql)
+#         members = db.open_all_members_names()
+#         emit('need-members', {'status': 'success',
+#                           'members': members
+#                           })
+#     except Exception as e:
+#         print('need-members error:', e)
+#
+#     finally:
+#         emit('need-members', {'status': 'error', 'members': []})
 @socketio.on('need-members')
 def need_members(data):
+    db = None
     try:
         db = DataBaseLoader(mysql)
         members = db.open_all_members_names()
-        emit('need-members', {'status': 'success',
-                          'members': members
-                          })
+        emit('need-members', {'status': 'success', 'members': members})
     except Exception as e:
         print('need-members error:', e)
-
-    finally:
         emit('need-members', {'status': 'error', 'members': []})
+    finally:
+        if db:
+            db.close()
 
 @socketio.on('make_new_chat')
 def make_new_chat(data):
