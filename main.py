@@ -102,10 +102,8 @@ def load_chat(data):
         out, into, all = db.loadMessages(data['user_id'], data['chat_id'])
 
         friend_login = db.load_Friends_Info(data['user_id'], data['chat_id'])
-        room_name = f"chat_{data['chat_id']}"
+        room_name = f"chat_{data['chat_id']}_user_{data['user_id']}"
         join_room(room_name)
-
-
         friend_id = db.friend_id
         emit('load-chat', {'status': 'success',
                        'out': list(out),
@@ -167,7 +165,7 @@ def sending_messages(data):
         out, into, all = db.loadMessages(user_id, chat_id)
         friend_login = db.load_Friends_Info(user_id, chat_id)
         friend_id = db.friend_id
-        room_name = f"chat_{chat_id}"
+        room_name = f"chat_{chat_id}_user_{user_id}"
         emit('load-chat', {'status': 'success',
                            'out': list(out),
                            'into': list(into),
