@@ -102,7 +102,7 @@ def load_chat(data):
         out, into, all = db.loadMessages(data['user_id'], data['chat_id'])
 
         friend_login = db.load_Friends_Info(data['user_id'], data['chat_id'])
-        room_name = f"chat_{data['chat_id']}_user_{data['user_id']}"
+        room_name = f"chat_{data['chat_id']}"
         join_room(room_name)
         friend_id = db.friend_id
         emit('load-chat', {'status': 'success',
@@ -161,34 +161,21 @@ def sending_messages(data):
     chat_id = data['chat_id']
     db = DataBaseLoader(mysql)
     if db.send_messages(message, user_id, chat_id):
-        db = DataBaseLoader(mysql)
-        out, into, all = db.loadMessages(user_id, chat_id)
-        friend_login = db.load_Friends_Info(user_id, chat_id)
-        friend_id = db.friend_id
-        room_name = f"chat_{chat_id}_user_{user_id}"
-        emit('load-chat', {'status': 'success',
-                           'out': list(out),
-                           'into': list(into),
-                           'all': list(all),
-                           'friend_login': friend_login,
-                           'friend_id': friend_id,
-                           }, to=room_name)
+        room_name = f"chat_{chat_id}"
+        emit('new-message', {'status': 'success',
+                             'author_id': user_id,
+                             'chat_id': chat_id
+                             ,'text': message}, to=room_name)
+        # emit('load-chat', {'status': 'success',
+        #                    'out': list(out),
+        #                    'into': list(into),
+        #                    'all': list(all),
+        #                    'friend_login': friend_login,
+        #                    'friend_id': friend_id,
+        #                    }, to=room_name)
     else:
         emit('load-chat', {'status': 'error'})
 
-# @socketio.on('need-members')
-# def need_members(data):
-#     try:
-#         db = DataBaseLoader(mysql)
-#         members = db.open_all_members_names()
-#         emit('need-members', {'status': 'success',
-#                           'members': members
-#                           })
-#     except Exception as e:
-#         print('need-members error:', e)
-#
-#     finally:
-#         emit('need-members', {'status': 'error', 'members': []})
 @socketio.on('need-members')
 def need_members(data):
     db = None

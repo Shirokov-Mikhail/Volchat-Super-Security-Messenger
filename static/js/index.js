@@ -364,6 +364,41 @@ function new_chat_button_active(user_id){
     // }
 
 }
+
+socket.on('new-message', function(data){
+    if (data['status'] === 'success') {
+        // перед этим data['text'] нужно как то дешифровать
+        if (data['author_id'] === user_id) {
+            const htmlContent = `<div class="message right">
+            <img class="message-img" src="../../static/image/logo.png" alt="Волчат">
+            <div class="message-content">
+                <p class="text">${data['text']}</p>
+                <p class="text time">00:00</p>
+            </div>
+        </div>`;
+
+            messages_list.insertAdjacentElement('afterbegin', Element(htmlContent))
+        }
+        else if (data['author_id'] !== user_id){
+            const htmlContent = `<div class="message left">
+            <img class="message-img" src="../../static/image/logo.png" alt="Волчат">
+            <div class="message-content">
+                <p class="text">${data['text']}</p>
+                <p class="text time">00:00</p>
+            </div>
+        </div>`;
+
+            messages_list.insertAdjacentElement('afterbegin', Element(htmlContent))
+            //Исправить ошубку конвертации из String to Element
+        }
+        else {
+            console.log('предятинка');
+            const htmlContent = ``
+        }
+    }else {
+        console.log('Error in 394 line')
+    }
+})
 // кнопки
 // new_chat_btn.addEventListener('click', (event) => {
 //     new_chat_panel.style.display = "flex";
@@ -375,6 +410,20 @@ document.addEventListener("keydown", (event) => {
         case 'Escape':
             break
         case 'Enter':
+            if (!new_chat_activity){
+                send_messages()
+            }
+            else{
+                console.log('user', user_id)
+                socket.emit('make_new_chat', {
+                    'users': users_selected,
+                    'user_id': Number(user_id),
+                    'name': send_message.value
+                })
+
+                closeNewChat()
+
+            }
             break
     }
 })
