@@ -47,7 +47,7 @@ let username_local;
 let user_id;
 let chats = [];
 let user_key;
-let current_chat_id;
+let current_chat_id = -1;
 let privatekey;
 let publickey;
 let active_chat_id;
@@ -168,10 +168,12 @@ socket.on('registration', function(data) {
     }
 })
 function loadChat(chat_id) {
-    current_chat_id = chat_id
+    console.log(current_chat_id)
     socket.emit('load-chat', {
         'chat_id': chat_id,
-        'user_id': user_id});
+        'user_id': user_id,
+    'old_chat_id': current_chat_id});
+    current_chat_id = chat_id
 }
 socket.on('load-chat', function(data){
     if (data['status'] === 'success' && !new_chat_activity) {
@@ -248,6 +250,7 @@ function openChat(all_id, id) {//id чата, id уже не помню чего
     for (let key in chats) {
         console.log(id, key)
         if (Number(key) === Number(id)) {
+
             loadChat(Number(all_id));
             active_chat_id = all_id;
             contacts.innerHTML += `<button onclick="openChat(${chats[key][0]}, ${key})" class="chat-panel-element active-chat">
@@ -377,7 +380,7 @@ socket.on('new-message', function(data){
             </div>
         </div>`;
 
-            messages_list.insertAdjacentElement('afterbegin', Element(htmlContent))
+            messages_list.insertAdjacentHTML('beforeend', htmlContent)
         }
         else if (data['author_id'] !== user_id){
             const htmlContent = `<div class="message left">
@@ -388,22 +391,23 @@ socket.on('new-message', function(data){
             </div>
         </div>`;
 
-            messages_list.insertAdjacentElement('afterbegin', Element(htmlContent))
+            messages_list.insertAdjacentHTML('beforeend', htmlContent)
             //Исправить ошубку конвертации из String to Element
         }
         else {
             console.log('предятинка');
             const htmlContent = ``
         }
+        const scrollContainer = document.getElementById('messages');
+
+        setTimeout(() => {
+            scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        }, 10);
     }else {
         console.log('Error in 394 line')
     }
 })
 // кнопки
-// new_chat_btn.addEventListener('click', (event) => {
-//     new_chat_panel.style.display = "flex";
-// })
-
 
 document.addEventListener("keydown", (event) => {
     switch (event.code) {

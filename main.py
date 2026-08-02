@@ -1,6 +1,8 @@
+from glob import escape
+
 from flask_mysqldb import MySQL
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session
-from flask_socketio import SocketIO, emit, join_room
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from functions.db import DB, DataBaseLoader
 
 from flask_session import Session
@@ -98,9 +100,9 @@ def load_chat(data):
     try:
 
         db = DataBaseLoader(mysql)
-
+        print(data)
         out, into, all = db.loadMessages(data['user_id'], data['chat_id'])
-
+        leave_room(f'chat_{data['old_chat_id']}')
         friend_login = db.load_Friends_Info(data['user_id'], data['chat_id'])
         room_name = f"chat_{data['chat_id']}"
         join_room(room_name)
@@ -156,7 +158,7 @@ def registration(data):
 
 @socketio.on('send-message')
 def sending_messages(data):
-    message = data['message']
+    message = escape(data['message'])
     user_id = data['user_id']
     chat_id = data['chat_id']
     db = DataBaseLoader(mysql)
