@@ -11,9 +11,8 @@ const auth_btn = document.getElementById("auth-btn");
 const auth_form = document.getElementById("autorisi");
 const x_close = document.getElementById("close_auth");
 
-
+// основные элементы главной страницы
 const contacts = document.getElementById("contacts");
-
 
 const username = document.getElementById("name");
 const messages_list = document.getElementById("messages");
@@ -37,26 +36,27 @@ const password_1 = document.getElementById("password");
 const password_2 = document.getElementById("password-repeat");
 const login_error = document.getElementById("reg-error");
 const password_repeat_error = document.getElementById("password-error");
-
-const new_chat_btn = document.getElementById("new-chat-btn");
+// тут элементы нового чата
 const new_chat_panel = document.getElementById("new-chat-panel");
 
 
 // подгрузка чатов сервер сам поймет что сессии нет
-let username_local;
-let user_id;
-let chats = [];
-let user_key;
-let current_chat_id = -1;
-let privatekey;
-let publickey;
-let active_chat_id;
-let new_chat_activity = false;
-let users_selected = [];
+let username_local; // имя пользователя
+let user_id;// id пользователя
+let chats = [];// список чатов чтобы не приходилось заново подгружать
+let user_key; // публичный ключ пользователя
+let current_chat_id = -1;// текущий id чата все id больше 0 изначально чтобы не закртыть существующую комнату -1
+let privatekey;// приватный ключ пользователя
+let publickey;// публичный ключ собеседника
+let helman_key; // симетричный ключ который будет сгенерирован из публичного и приватного
+let new_chat_activity = false;// если идет создание нового чата то true
+let users_selected = [];// выбранные пользователи при создании нового чат
+let famous_users = [] // чтобы не подгружать заново контакты
+// а
 // подгрузка чатов
 const socket = io("http://127.0.0.1:5000");
-socket.on('start-session', function(data) {
-    if (data['status'] === 200){
+socket.on('start-session', function (data) {
+    if (data['status'] === 200) {
         footer.style.display = "none";
         start_page.style.display = "none";
 
@@ -89,11 +89,12 @@ function auth() {
     }
 
 }
+
 // авторизация
-socket.on('auth', function(data) {
-    if (data['status'] === 'success' && user_id !== NaN){
+socket.on('auth', function (data) {
+    if (data['status'] === 'success' && user_id !== NaN) {
         console.log(data);
-        email_auth.style.borderColor='black';
+        email_auth.style.borderColor = 'black';
         auth_error.style.display = 'none';
         let user_local_id = data['id']
         let test_messages = data['key-verifi'];
@@ -102,23 +103,22 @@ socket.on('auth', function(data) {
         if (test_messages === 'hello world') {
 
             auth_pass_error.style.display = 'none';
-            password_auth.style.borderColor='black';
+            password_auth.style.borderColor = 'black';
             user_key = key
             user_id = data['id']
             username_local = email_auth.value
             socket.emit('start-session', {'status': 'success', 'id': user_local_id, 'login': username_local})
-        }
-        else{
+        } else {
             auth_pass_error.style.display = 'block';
-            password_auth.style.borderColor='red';
+            password_auth.style.borderColor = 'red';
         }
-    }
-    else {
+    } else {
         auth_error.style.display = 'block';
-        email_auth.style.borderColor='red';
+        email_auth.style.borderColor = 'red';
         console.log(data['status']);
     }
 })
+
 // проверка регистрации
 function register() {
     if (login.value !== '' && password_1.value !== '' && password_2.value === password_1.value && username_local !== '' && password_1.value.length >= 8) {
@@ -128,13 +128,14 @@ function register() {
         socket.emit('registration-check', {
             'login': login.value,
         })
-    }else if (password_1.value !== password_2.value) {
+    } else if (password_1.value !== password_2.value) {
         password_1.style.borderColor = 'red';
         password_2.style.borderColor = 'red';
         password_repeat_error.style.display = 'block';
     }
 }
-socket.on('registration-check', function(data) {
+
+socket.on('registration-check', function (data) {
     if (data['status'] === 'success') {
         login.style.borderColor = 'black';
         login_error.style.display = 'none';
@@ -155,33 +156,37 @@ socket.on('registration-check', function(data) {
             'private_key': user_key,
             'test-message': 'hello world'
         })
-    }
-    else {
+    } else {
         login.style.borderColor = 'red';
         login_error.style.display = 'block';
     }
 })
-socket.on('registration', function(data) {
+socket.on('registration', function (data) {
     if (data['status'] === 'success') {
         user_id = data['id']
         socket.emit('start-session', {'status': 'success', 'id': user_id, 'login': username_local})
     }
 })
+
+// запрос на сервер для получения сообщений
 function loadChat(chat_id) {
     console.log(current_chat_id)
     socket.emit('load-chat', {
         'chat_id': chat_id,
         'user_id': user_id,
-    'old_chat_id': current_chat_id});
+        'old_chat_id': current_chat_id
+    });
     current_chat_id = chat_id
 }
-socket.on('load-chat', function(data){
+
+socket.on('load-chat', function (data) {
     if (data['status'] === 'success' && !new_chat_activity) {
         chat_page.style.display = 'flex'
         username.textContent = data['friend_login'];
 
         const into = data['into'] || [];
         const out = data['out'] || [];
+
         const all_messages = data['all'] || [];
         send_message.value = '';
         let htmlContent = '';
@@ -217,7 +222,7 @@ socket.on('load-chat', function(data){
 })
 
 function send_messages() {
-    if (send_message.value !== '' && active_chat_id) {
+    if (send_message.value !== '' && current_chat_id !== -1) {
         console.log(send_message.value);
         let message = send_message.value;
         // шифруем сообщение
@@ -227,15 +232,14 @@ function send_messages() {
         socket.emit('send-message', {
             'message': message,
             'user_id': user_id,
-            'chat_id': active_chat_id
+            'chat_id': current_chat_id
         })
     }
 }
 
 
-
 // все что ниже нужно переписать
-
+// как оказалось не трогай то что работает хорошо
 function openChat(all_id, id) {//id чата, id уже не помню чего;
     console.log(all_id, id);
     start_panel.style.display = "none";
@@ -252,11 +256,9 @@ function openChat(all_id, id) {//id чата, id уже не помню чего
         if (Number(key) === Number(id)) {
 
             loadChat(Number(all_id));
-            active_chat_id = all_id;
             contacts.innerHTML += `<button onclick="openChat(${chats[key][0]}, ${key})" class="chat-panel-element active-chat">
       <p class="text">${chats[key][1]}</p> </button>`;
-        }
-        else {
+        } else {
             contacts.innerHTML += `<button onclick="openChat(${chats[key][0]}, ${key})" class="chat-panel-element chat-panel-hover">
       <p class="text">${chats[key][1]}</p> </button>`;
         }
@@ -266,24 +268,19 @@ function openChat(all_id, id) {//id чата, id уже не помню чего
     </button>`
 
 }
-// до сюда примерно
-function updateChat(){
-    loadChat(current_chat_id)
-    if (!new_chat_activity) {
-        setTimeout(updateChat, 10000)
 
-    }
-}
-function closeNewChat(){
+// до сюда примерно Ну уже не буду
+
+function closeNewChat() {
     new_chat_panel.style.display = "none";
     new_chat_activity = false
     users_selected = []
     send_message.value = '';
     username.textContent = ''
-
     openChat(-1, -1)
 }
-function newChat(){
+
+function newChat() {
     console.log('asd new chat')
     new_chat_panel.style.display = "flex"
     start_panel.style.display = "none"
@@ -294,8 +291,7 @@ function newChat(){
     new_chat_activity = true
     socket.emit('need-members', {})
 }
-let famous_users = []
-function updateNewChatContacts(data){
+function updateNewChatContacts(data) {
     new_chat_panel.innerHTML = ''
     famous_users = data
     let htmlContent = `
@@ -326,12 +322,12 @@ function updateNewChatContacts(data){
             <!-- Список известных контактов -->`;
 
     for (let i = 0; i < data['members'].length; i++) {
-        if(users_selected.includes(Number(data['members'][i][0]))){
+        if (users_selected.includes(Number(data['members'][i][0]))) {
             htmlContent += `<button class="chat-panel-element active-user" onclick="new_chat_button_active(${data['members'][i][0]})">
                 
                 <h2 class="text">${data['members'][i][1]}</h2>
             </button>`
-        }else {
+        } else {
             htmlContent += `<button class="chat-panel-element chat-panel-hover" onclick="new_chat_button_active(${data['members'][i][0]})">
                 
                 <h2 class="text">${data['members'][i][1]}</h2>
@@ -342,21 +338,23 @@ function updateNewChatContacts(data){
     }
     new_chat_panel.innerHTML += htmlContent;
 }
-socket.on('need-members', function(data){
+
+socket.on('need-members', function (data) {
     if (data['status'] === 'success') {
         updateNewChatContacts(data)
     }
 })
-socket.on('make_new_chat', function (data){
+socket.on('make_new_chat', function (data) {
     if (data['status'] === 'success') {
-      //   const newDiv = `<button onclick="openChat(${data['chat_id']}, -1)" class="chat-panel-element">
-      // <p class="text">${data['chat_name']}</p> </button>`
-      //   contacts.insertAdjacentHTML('beforeend', newDiv);
+        //   const newDiv = `<button onclick="openChat(${data['chat_id']}, -1)" class="chat-panel-element">
+        // <p class="text">${data['chat_name']}</p> </button>`
+        //   contacts.insertAdjacentHTML('beforeend', newDiv);
         chats.push([data['chat_id'], data['chat_name']])
         openChat(data['chat_id'], chats.length - 1)
     }
 })
-function new_chat_button_active(user_id){
+// для создания нового чата
+function new_chat_button_active(user_id) {
     users_selected = [user_id]
     console.log(famous_users)
     updateNewChatContacts(famous_users)
@@ -367,8 +365,8 @@ function new_chat_button_active(user_id){
     // }
 
 }
-
-socket.on('new-message', function(data){
+// при поступлении нового сообщения
+socket.on('new-message', function (data) {
     if (data['status'] === 'success') {
         // перед этим data['text'] нужно как то дешифровать
         if (data['author_id'] === user_id) {
@@ -381,8 +379,7 @@ socket.on('new-message', function(data){
         </div>`;
 
             messages_list.insertAdjacentHTML('beforeend', htmlContent)
-        }
-        else if (data['author_id'] !== user_id){
+        } else if (data['author_id'] !== user_id) {
             const htmlContent = `<div class="message left">
             <img class="message-img" src="../../static/image/logo.png" alt="Волчат">
             <div class="message-content">
@@ -393,8 +390,7 @@ socket.on('new-message', function(data){
 
             messages_list.insertAdjacentHTML('beforeend', htmlContent)
             //Исправить ошубку конвертации из String to Element
-        }
-        else {
+        } else {
             console.log('предятинка');
             const htmlContent = ``
         }
@@ -403,7 +399,7 @@ socket.on('new-message', function(data){
         setTimeout(() => {
             scrollContainer.scrollTop = scrollContainer.scrollHeight;
         }, 10);
-    }else {
+    } else {
         console.log('Error in 394 line')
     }
 })
@@ -414,10 +410,9 @@ document.addEventListener("keydown", (event) => {
         case 'Escape':
             break
         case 'Enter':
-            if (!new_chat_activity){
+            if (!new_chat_activity) {
                 send_messages()
-            }
-            else{
+            } else {
                 console.log('user', user_id)
                 socket.emit('make_new_chat', {
                     'users': users_selected,
@@ -432,10 +427,9 @@ document.addEventListener("keydown", (event) => {
     }
 })
 send_button.addEventListener('click', (event) => {
-    if (!new_chat_activity){
+    if (!new_chat_activity) {
         send_messages()
-    }
-    else{
+    } else {
         console.log('user', user_id)
         socket.emit('make_new_chat', {
             'users': users_selected,
@@ -477,7 +471,7 @@ x_close.addEventListener("click", () => {
 
 })
 send_message.addEventListener('input', (event) => {
-    if (new_chat_activity){
+    if (new_chat_activity) {
         username.textContent = send_message.value;
     }
 })
