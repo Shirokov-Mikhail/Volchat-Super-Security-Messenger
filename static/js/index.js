@@ -39,12 +39,11 @@ const password_repeat_error = document.getElementById("password-error");
 // тут элементы нового чата
 const new_chat_panel = document.getElementById("new-chat-panel");
 
-
 // подгрузка чатов сервер сам поймет что сессии нет
-let username_local; // имя пользователя
-let user_id;// id пользователя
+let username_local = localStorage.getItem('username'); // имя пользователя
+let user_id = localStorage.getItem('user_id');// id пользователя
 let chats = [];// список чатов чтобы не приходилось заново подгружать
-let user_key; // публичный ключ пользователя
+let user_key = localStorage.getItem('user_key'); // публичный ключ пользователя
 let current_chat_id = -1;// текущий id чата все id больше 0 изначально чтобы не закртыть существующую комнату -1
 let privatekey;// приватный ключ пользователя
 let publickey;// публичный ключ собеседника
@@ -52,11 +51,16 @@ let helman_key; // симетричный ключ который будет с�
 let new_chat_activity = false;// если идет создание нового чата то true
 let users_selected = [];// выбранные пользователи при создании нового чат
 let famous_users = [] // чтобы не подгружать заново контакты
+let jwt_token = localStorage.getItem('jwt_token');// jwt ТОКЕН потом localStorage.getItem('jwt_token');
+
 // а
+const socket = io("http://127.0.0.1:5000", {auth: {token: jwt_token}});
+
 // подгрузка чатов
-const socket = io("http://127.0.0.1:5000");
 socket.on('start-session', function (data) {
-    if (data['status'] === 200) {
+    if (data['status'] === 'success') {
+        jwt_token = data['token'];
+        localStorage.setItem('jwt_token', jwt_token);
         footer.style.display = "none";
         start_page.style.display = "none";
 
@@ -65,11 +69,8 @@ socket.on('start-session', function (data) {
         contacts.innerHTML = '<div class="chat-panel-element">\n' +
             '      <h2 class="title">Чаты</h2>\n' +
             '    </div>'
-        console.log("Message from server:", data);
-        console.log(data['clients']);
         for (let key in data['clients']) {
             chats.push(data['clients'][key]);
-            console.log(data['clients'][key]);
             contacts.innerHTML += `<button onclick="openChat(${data['clients'][key][0]}, ${key})" class="chat-panel-element chat-panel-hover">
       <p class="text">${data['clients'][key][1]}</p> </button>`;
         }
@@ -85,6 +86,7 @@ function auth() {
     if (email_auth.value !== '' && password_auth.value !== '') {
         socket.emit('auth', {
             'login': email_auth.value,
+            'token':jwt_token
         })
     }
 
@@ -106,8 +108,11 @@ socket.on('auth', function (data) {
             password_auth.style.borderColor = 'black';
             user_key = key
             user_id = data['id']
+            localStorage.setItem('user_key', user_key);
+            localStorage.setItem('user_id', user_id);
             username_local = email_auth.value
-            socket.emit('start-session', {'status': 'success', 'id': user_local_id, 'login': username_local})
+            localStorage.setItem('username', username_local)
+            socket.emit('start-session', {'status': 'success', 'id': user_local_id, 'login': username_local, 'token':jwt_token})
         } else {
             auth_pass_error.style.display = 'block';
             password_auth.style.borderColor = 'red';
@@ -127,6 +132,7 @@ function register() {
         password_repeat_error.style.display = 'none';
         socket.emit('registration-check', {
             'login': login.value,
+            'token':jwt_token
         })
     } else if (password_1.value !== password_2.value) {
         password_1.style.borderColor = 'red';
@@ -154,7 +160,8 @@ socket.on('registration-check', function (data) {
             'login': username_local,
             'public_key': public_key_local,
             'private_key': user_key,
-            'test-message': 'hello world'
+            'test-message': 'hello world',
+            'token':jwt_token
         })
     } else {
         login.style.borderColor = 'red';
@@ -164,7 +171,8 @@ socket.on('registration-check', function (data) {
 socket.on('registration', function (data) {
     if (data['status'] === 'success') {
         user_id = data['id']
-        socket.emit('start-session', {'status': 'success', 'id': user_id, 'login': username_local})
+        localStorage.setItem('user_id', user_id);
+        socket.emit('start-session', {'status': 'success', 'id': user_id, 'login': username_local, 'token':jwt_token})
     }
 })
 
@@ -174,7 +182,8 @@ function loadChat(chat_id) {
     socket.emit('load-chat', {
         'chat_id': chat_id,
         'user_id': user_id,
-        'old_chat_id': current_chat_id
+        'old_chat_id': current_chat_id,
+        'token':jwt_token
     });
     current_chat_id = chat_id
 }
@@ -232,7 +241,8 @@ function send_messages() {
         socket.emit('send-message', {
             'message': message,
             'user_id': user_id,
-            'chat_id': current_chat_id
+            'chat_id': current_chat_id,
+            'token':jwt_token
         })
     }
 }
@@ -387,12 +397,10 @@ socket.on('new-message', function (data) {
                 <p class="text time">00:00</p>
             </div>
         </div>`;
-
             messages_list.insertAdjacentHTML('beforeend', htmlContent)
             //Исправить ошубку конвертации из String to Element
         } else {
             console.log('предятинка');
-            const htmlContent = ``
         }
         const scrollContainer = document.getElementById('messages');
 
@@ -402,6 +410,19 @@ socket.on('new-message', function (data) {
     } else {
         console.log('Error in 394 line')
     }
+})
+async function loadToken() {
+    const response = await fetch('http://127.0.0.1:5000/login', {method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({user_id: user_id, username})})
+    console.log(response)
+}
+socket.on('need-new-access-token', () => {
+    // loadToken()
+    // refresh token
+
 })
 // кнопки
 
@@ -417,7 +438,8 @@ document.addEventListener("keydown", (event) => {
                 socket.emit('make_new_chat', {
                     'users': users_selected,
                     'user_id': Number(user_id),
-                    'name': send_message.value
+                    'name': send_message.value,
+                    'token':jwt_token
                 })
 
                 closeNewChat()
@@ -434,7 +456,8 @@ send_button.addEventListener('click', (event) => {
         socket.emit('make_new_chat', {
             'users': users_selected,
             'user_id': Number(user_id),
-            'name': send_message.value
+            'name': send_message.value,
+            'token':jwt_token
         })
 
         closeNewChat()

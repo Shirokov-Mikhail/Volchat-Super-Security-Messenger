@@ -1,4 +1,6 @@
 from werkzeug.security import generate_password_hash, check_password_hash
+import datetime
+
 
 class DB:
     def __init__(self, mysql):
@@ -102,6 +104,7 @@ class DB:
             print('add_messages', e)
             return False
 
+#для работы с прямыми данными пользователя
 class DataBaseLoader:
     def __init__(self, mysql):
         self.mysql = mysql
@@ -291,3 +294,84 @@ class DataBaseLoader:
     def close(self):
         if self.cur:
             self.cur.close()
+
+#для работы с токенами
+class DbTokenAccessCheck(DataBaseLoader):
+    def __init__(self, mysql):
+        # Исправлен вызов конструктора родительского класса
+        super().__init__(mysql)
+
+    def addRefreshToken(self, id: str, max_age: int):
+        try:
+            # Высчитываем точную дату смерти токена на стороне Python (по UTC)
+            now = datetime.datetime.now(datetime.timezone.utc)
+            expires_at = now + datetime.timedelta(seconds=max_age)
+
+            # Используем %s для защиты от SQL-инъекций
+            sql = "INSERT INTO `refresh` (`id`, `max_age`, `expires_at`) VALUES (%s, %s, %s)"
+            self.cur.execute(sql, (id, max_age, expires_at))
+            self.mysql.connection.commit() # Обязательно сохраняем изменения!
+
+        except Exception as e:
+            print(f"Ошибка при добавлении токена: {e}")
+            self.mysql.connection.rollback()
+
+    def checkRefreshToken(self, id: str) -> bool:
+        try:
+            sql = "SELECT `expires_at` FROM `refresh` WHERE `id` = %s"
+            self.cur.execute(sql, (id,))
+            result = self.cur.fetchone()
+
+            if result:
+                # Если курсор возвращает словарь (DictCursor), используйте result['expires_at']
+                # Если кортеж, то result[0]
+                expires_at = result[0] if isinstance(result, tuple) else result['expires_at']
+
+                # Проверяем, не истекло ли время.
+                # Сравниваем с текущим временем (удаляем tzinfo для совместимости с MySQL datetime)
+                now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+
+                if expires_at > now:
+                    return True # Токен найден и еще жив
+
+            return False # Токен не найден или протух
+
+        except Exception as e:
+            print(f"Ошибка при проверке токена: {e}")
+            return False
+
+    def updateRefreshToken(self, old_id: str, new_id: str, new_max_age: int):
+        try:
+            # Высчитываем новую дату
+            now = datetime.datetime.now(datetime.timezone.utc)
+            new_expires_at = now + datetime.timedelta(seconds=new_max_age)
+
+            # Обновляем запись (ротация токена)
+            sql = "UPDATE `refresh` SET `id` = %s, `max_age` = %s, `expires_at` = %s WHERE `id` = %s"
+            self.cur.execute(sql, (new_id, new_max_age, new_expires_at, old_id))
+            self.mysql.connection.commit()
+
+        except Exception as e:
+            print(f"Ошибка при обновлении токена: {e}")
+            self.mysql.connection.rollback()
+
+    def deleteRefreshToken(self, id: str):
+        try:
+            sql = "DELETE FROM `refresh` WHERE `id` = %s"
+            self.cur.execute(sql, (id,))
+            self.mysql.connection.commit()
+
+        except Exception as e:
+            print(f"Ошибка при удалении токена: {e}")
+            self.mysql.connection.rollback()
+
+    def autoDeleteRefreshTokens(self):
+        try:
+            # Используем встроенную функцию MySQL UTC_TIMESTAMP() для быстрого удаления
+            sql = "DELETE FROM `refresh` WHERE `expires_at` < UTC_TIMESTAMP()"
+            self.cur.execute(sql)
+            self.mysql.connection.commit()
+
+        except Exception as e:
+            print(f"Ошибка при очистке старых токенов: {e}")
+            self.mysql.connection.rollback()
