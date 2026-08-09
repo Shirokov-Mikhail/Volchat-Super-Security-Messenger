@@ -41,8 +41,9 @@ const new_chat_panel = document.getElementById("new-chat-panel");
 
 
 // подгрузка чатов сервер сам поймет что сессии нет
-let username_local; // имя пользователя
-let user_id;// id пользователя
+let username_local = localStorage.getItem('username') || undefined; // имя пользователя
+let user_id = localStorage.getItem('user_id') || undefined;// id пользователя
+console.log(localStorage.getItem('user_id'), localStorage.getItem('username'))
 let chats = [];// список чатов чтобы не приходилось заново подгружать
 let user_key; // публичный ключ пользователя
 let current_chat_id = -1;// текущий id чата все id больше 0 изначально чтобы не закртыть существующую комнату -1
@@ -52,9 +53,15 @@ let helman_key; // симетричный ключ который будет с�
 let new_chat_activity = false;// если идет создание нового чата то true
 let users_selected = [];// выбранные пользователи при создании нового чат
 let famous_users = [] // чтобы не подгружать заново контакты
-// а
-// подгрузка чатов
+// Потом нужно удалить
 const socket = io("http://127.0.0.1:5000");
+if (user_id !== null && user_id !== undefined && username_local !== null && username_local !== undefined) {
+    console.log (user_id , username_local);
+    socket.emit('auth', {
+        'login': username_local,
+    })
+}
+// подгрузка чатов
 socket.on('start-session', function (data) {
     if (data['status'] === 200) {
         footer.style.display = "none";
@@ -106,7 +113,11 @@ socket.on('auth', function (data) {
             password_auth.style.borderColor = 'black';
             user_key = key
             user_id = data['id']
-            username_local = email_auth.value
+            localStorage.setItem('user_id', user_id)
+            if (username_local === null || username_local === undefined) {
+                username_local = email_auth.value
+            }
+            localStorage.setItem('username', username_local)
             socket.emit('start-session', {'status': 'success', 'id': user_local_id, 'login': username_local})
         } else {
             auth_pass_error.style.display = 'block';
@@ -143,6 +154,7 @@ socket.on('registration-check', function (data) {
         let public_key_local = ''
         user_key = '';
         username_local = login.value;
+        localStorage.setItem('username', username_local)
         // тут зашифровываем hello world
 
         //тут шифруем приватный ключ на пароль
@@ -164,6 +176,7 @@ socket.on('registration-check', function (data) {
 socket.on('registration', function (data) {
     if (data['status'] === 'success') {
         user_id = data['id']
+        localStorage.setItem('user_id', user_id)
         socket.emit('start-session', {'status': 'success', 'id': user_id, 'login': username_local})
     }
 })
