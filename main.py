@@ -1,4 +1,6 @@
 import datetime
+import redis
+
 from glob import escape
 
 from flask_mysqldb import MySQL
@@ -8,8 +10,7 @@ from sqlalchemy.util.langhelpers import tag_method_for_warnings
 
 from functions.db import DB, DataBaseLoader, DbTokenAccessCheck
 from functions.tokens import TokenManager
-import jwt
-from flask_session import Session
+from functions.nonce import *
 
 app = Flask(__name__)
 app.config["MYSQL_HOST"] = "localhost"
@@ -31,10 +32,10 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
 app.config['SESSION_COOKIE_HTTPONLY'] = False #True при https
 app.config['SESSION_COOKIE_SAMESITE'] = 'None' # Или 'Lax', если фронт и бек на одном домене
 app.config['SESSION_TYPE'] = 'filesystem'
-Session(app)
 
 mysql = MySQL(app)
-socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False)
+socketio = SocketIO(app, cors_allowed_origins="*", manage_session=True)
+r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
 
 @app.route('/')
@@ -101,7 +102,17 @@ def user_load_messages(data):
     db = TokenManager(mysql)
     login.capitalize()
     if db.auth(login):
-        if not db.check_token(data['token'], 'access')[0]:
+        if not data['token']:
+            nonce = generate_nonce()
+            r.setex(name=f"nonce:{login}", time=60, value=nonce)
+            emit('need-access-token', {'status': 'success',
+                                       'login': login,
+                                       'id': db.id,
+                                       'private-key': db.key,
+                                       'public-key': db.public,
+                                       'nonce': nonce
+                                       })
+        elif not db.check_token(data['token'], 'access')[0]:
             emit('need-new-access-token', {'status': 'success'})
         else:
             # тут придется повторить запрос
@@ -257,6 +268,26 @@ def make_new_chat(data):
     except Exception as e:
         print('make_new_chat error:', e)
 
+@socketio.on('verify_signature')
+def handle_verify_signature(data):
+    login = data.get('login')
+    signature = data.get('signature')
+    public_key = data.get('public_key')
+
+    key = f"nonce:{login}"
+    pipe = r.pipeline()
+    pipe.get(key)
+    pipe.delete(key)
+    results = pipe.execute()
+
+    saved_nonce = results[0]
+
+    if not saved_nonce:
+        emit('auth', {'success': False, 'error': 'Nonce истек или не запрашивался'})
+        return
+    if verify_nonce_signature(saved_nonce, signature, public_key):
+        emit('auth')
+
 
 @app.route('/login', methods=['POST'])
 def login(data):
@@ -278,6 +309,7 @@ def login(data):
     )
 
     return response
+
 # Пример использования при обновлении:
 @app.route('/refresh', methods=['POST'])
 def refresh(data):

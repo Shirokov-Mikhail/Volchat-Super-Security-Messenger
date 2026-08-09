@@ -99,8 +99,7 @@ socket.on('auth', function (data) {
         email_auth.style.borderColor = 'black';
         auth_error.style.display = 'none';
         let user_local_id = data['id']
-        let test_messages = data['key-verifi'];
-        let key = data['key'];
+
         // тут должен быть вызов функции расшифровки текста
         if (test_messages === 'hello world') {
 
@@ -420,10 +419,102 @@ async function loadToken() {
     console.log(response)
 }
 socket.on('need-new-access-token', () => {
-    // loadToken()
-    // refresh token
+
 
 })
+socket.on('need-access-token', function (data) {
+    if (data['status'] === 'success' && user_id !== NaN) {
+        console.log(data);
+        email_auth.style.borderColor = 'black';
+        auth_error.style.display = 'none';
+        let user_local_id = data['id']// потом станет глобальной
+        let key = data['private-key'];
+        let public_key = data['public-key'];// потом станет глобальной
+        let nonce = data['nonce'];
+        let login = data['login'];
+        // тут расшифровали key получили чистый приватный ключ
+
+        // тут
+        generateSignature(nonce, key).then(function(signature) {
+
+            // ВЕСЬ код, которому нужна подпись, пишется только ЗДЕСЬ
+            console.log("Подпись успешно создана!", signature);
+            socket.emit('verify_signature', {
+                login: login,
+                sig: signature,
+                public_key: public_key
+            });
+
+        }).catch(function(error) {
+            // Если произошла ошибка (например, неверный ключ)
+            console.error("Что-то пошло не так:", error);
+        });
+        // // тут должен быть вызов функции расшифровки текста
+        // if (test_messages === 'hello world') {
+        //
+        //     auth_pass_error.style.display = 'none';
+        //     password_auth.style.borderColor = 'black';
+        //     user_key = key
+        //     user_id = data['id']
+        //     localStorage.setItem('user_key', user_key);
+        //     localStorage.setItem('user_id', user_id);
+        //     username_local = email_auth.value
+        //     localStorage.setItem('username', username_local)
+        //     socket.emit('', {'status': 'success', 'id': user_local_id, 'login': username_local, 'token':jwt_token})
+    //     } else {
+    //         auth_pass_error.style.display = 'block';
+    //         password_auth.style.borderColor = 'red';
+    //     }
+    // } else {
+    //     auth_error.style.display = 'block';
+    //     email_auth.style.borderColor = 'red';
+    //     console.log(data['status']);
+    // }
+        }
+
+})
+// Подписи
+// Вспомогательная функция: переводит сырые байты (ArrayBuffer) в строку Base64
+function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
+}
+
+/**
+ * Создает криптографическую подпись ECDSA для любой строки
+ * * @param {string} dataString - Исходная строка, которую нужно подписать (например, nonce)
+ * @param {CryptoKey} privateKey - Объект приватного ключа пользователя
+ * @returns {Promise<string>} - Готовая подпись в формате Base64
+ */
+async function generateSignature(dataString, privateKey) {
+    try {
+        // 1. Кодируем текст в сырые байты, так как криптография работает только с байтами
+        const encoder = new TextEncoder();
+        const dataBytes = encoder.encode(dataString);
+
+        // 2. Ставим подпись с помощью встроенного движка браузера
+        const signatureBuffer = await window.crypto.subtle.sign(
+            {
+                name: "ECDSA",
+                hash: { name: "SHA-256" },
+            },
+            privateKey,
+            dataBytes
+        );
+
+        // 3. Переводим результат в Base64 для удобной передачи по сети
+        return arrayBufferToBase64(signatureBuffer);
+
+    } catch (error) {
+        console.error("[Криптография] Ошибка генерации подписи:", error);
+        throw error;
+    }
+}
 // кнопки
 
 document.addEventListener("keydown", (event) => {

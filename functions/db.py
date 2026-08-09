@@ -114,11 +114,12 @@ class DataBaseLoader:
         try:
             self.cur.execute(f'''SELECT EXISTS(SELECT 1 FROM users WHERE `Login` = '{login}');''')
             if int(self.cur.fetchall()[0][0]) == int(1):
-                self.cur.execute(f'''SELECT `id`, `test-message`, `private-key` FROM users WHERE `Login` = '{login}'; ''')
-                self.id, message, key = self.cur.fetchone()
+                self.cur.execute(f'''SELECT `id`, `test-message`, `private-key`, `public-key` FROM users WHERE `Login` = '{login}'; ''')
+                self.id, message, key, public = self.cur.fetchone()
                 self.message = message
                 self.id = int(self.id)
                 self.key = key
+                self.public = public
 
                 return True
             return False

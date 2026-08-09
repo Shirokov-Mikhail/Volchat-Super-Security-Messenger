@@ -33,25 +33,17 @@ class TokenManager(DbTokenAccessCheck):
         return jwt.encode(payload, self.REFRESH_SECRET, algorithm='HS256')
 
     def verify_token(self, token_string: str, expected_type: str) -> dict:
-        """
-        Проверяет токен на подлинность.
-        Возвращает расшифрованный payload (данные внутри токена).
-        """
         if expected_type not in ['access', 'refresh']:
             raise ValueError("expected_type должен быть 'access' или 'refresh'")
 
-        # Выбираем правильный секрет для расшифровки
         secret = self.ACCESS_SECRET if expected_type == 'access' else self.REFRESH_SECRET
 
         try:
-            # jwt.decode автоматически проверит подпись и срок действия (exp)
             payload = jwt.decode(token_string, secret, algorithms=['HS256'])
 
-            # Проверяем, что нам не подсунули refresh вместо access и наоборот
             if payload.get('type') != expected_type:
                 raise ValueError(f"Неверный тип токена. Ожидался: {expected_type}")
 
-            # Если это refresh-токен, обязательно проверяем его наличие в базе
             if expected_type == 'refresh':
                 jti = payload.get('jti')
                 if not self.checkRefreshToken(jti):
@@ -83,7 +75,7 @@ class TokenManager(DbTokenAccessCheck):
 
     def refresh_access_token(self, refresh_token_string: str) -> str:
         try:
-            # Переиспользуем нашу новую функцию проверки
+
             payload = self.verify_token(refresh_token_string, expected_type='refresh')
             user_id = payload.get('user_id')
             return self._generate_access(user_id)
@@ -95,7 +87,7 @@ class TokenManager(DbTokenAccessCheck):
 
     def rotate_tokens(self, refresh_token_string: str):
         try:
-            # Переиспользуем нашу новую функцию проверки
+
             payload = self.verify_token(refresh_token_string, expected_type='refresh')
 
             old_jti = payload.get('jti')
