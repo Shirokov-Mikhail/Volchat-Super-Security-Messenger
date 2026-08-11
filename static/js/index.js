@@ -238,6 +238,7 @@ function send_messages() {
     if (send_message.value !== '' && current_chat_id !== -1) {
         console.log(send_message.value);
         let message = send_message.value;
+
         // шифруем сообщение
 
         // на публичный ключ союеседника
@@ -247,6 +248,7 @@ function send_messages() {
             'user_id': user_id,
             'chat_id': current_chat_id
         })
+        send_message.value = '';
     }
 }
 
@@ -488,3 +490,26 @@ send_message.addEventListener('input', (event) => {
         username.textContent = send_message.value;
     }
 })
+
+let scrollTimeout;
+
+// Слушаем событие прокрутки на всем документе (на этапе захвата)
+document.addEventListener('scroll', function(event) {
+    // Находим элемент, который сейчас скроллится
+    const scrollingElement = event.target;
+
+    // Игнорируем сам документ, если скроллится не конкретный div
+    if (scrollingElement === document) return;
+
+    // Добавляем класс, чтобы ползунок стал видимым
+    scrollingElement.classList.add('is-scrolling');
+
+    // Сбрасываем старый таймер, если пользователь все еще крутит колесико
+    clearTimeout(scrollTimeout);
+
+    // Устанавливаем новый таймер на 2 секунды (2000 мс)
+    scrollTimeout = setTimeout(function() {
+        // Убираем класс — ползунок снова становится прозрачным
+        scrollingElement.classList.remove('is-scrolling');
+    }, 2000);
+}, true); // true обязателен, чтобы перехватывать скролл внутренних div'ов (например, .messages или .chats-panel)

@@ -32,6 +32,8 @@ body, html {
     background-color: var(--main-fone-color);
 }
 body {
+    padding: 0;
+    margin: 0;
     min-height: 98vh;
 }
 main {
@@ -39,7 +41,7 @@ main {
     justify-content: center;
     flex-wrap: wrap;
     height: 90vh; /* Оставляем 10vh под твой футер */
-    margin: 10px;
+
     overflow: hidden; /* Ничто не должно вываливаться из main */
     min-height: 84vh;
 }
@@ -53,27 +55,48 @@ main > * {
 }
 
 /* Вайб код настройки скролла */
+/* Вайб код настройки скролла */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
     margin-left: 3px;
 }
 ::-webkit-scrollbar-track {
-    background: #0a0a0a;
+    background: transparent; /* Скрываем дорожку по умолчанию */
     border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb {
-    background: #333333;
+    background: transparent; /* Скрываем ползунок по умолчанию */
     border-radius: 10px;
 }
-::-webkit-scrollbar-thumb:hover {
+
+/* ПОКАЗЫВАЕМ скролл при наведении курсора на любой элемент со скроллом */
+*:hover::-webkit-scrollbar-thumb {
+    background: #333333;
+}
+*:hover::-webkit-scrollbar-thumb:hover {
     background: #555555;
 }
-* {
-    scrollbar-width: thin;
-    scrollbar-color: #333333 #0a0a0a;
+*:hover::-webkit-scrollbar-track {
+    background: #0a0a0a;
 }
 
+/* ПОКАЗЫВАЕМ скролл при активной прокрутке (класс будет добавлять JS) */
+.is-scrolling::-webkit-scrollbar-thumb {
+    background: #333333;
+}
+.is-scrolling::-webkit-scrollbar-track {
+    background: #0a0a0a;
+}
+
+/* Поддержка Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent; /* Скрыт по умолчанию */
+}
+*:hover, .is-scrolling {
+    scrollbar-color: #333333 #0a0a0a; /* Видим при наведении или скролле */
+}
 /* =========================================
    3. ТИПОГРАФИКА
    ========================================= */
@@ -157,19 +180,24 @@ main > * {
     width: 100%;
 }
 input {
+    color: var(--main-font-color);
+    font-family: var(--title-font);
+
+    font-size: 18px;
+    background-color: #161614;
     align-self: center;
-    width: 80%;
-    border: 1px solid var(--main-font-color);
-    border-radius: 10px;
+    width: 90%;
+    border: 2px solid transparent;
+    border-radius: 20px;
     padding: 5px;
-    margin: 5px;
+    margin: 10px;
 }
 label {
     align-self: start;
     color: var(--main-font-color);
     font-family: var(--text-font);
     font-weight: 600;
-    font-size: 22px;
+    font-size: 26px;
     padding: 0;
 }
 .error {
@@ -218,9 +246,10 @@ label {
 }
 .absolut {
     position: absolute;
+    flex-direction: column;
     align-items: start !important;
     top: 0;
-    left: 41%;
+    left: 49%;
     background-color: var(--main-fone-color);
     height: 70%;
 }
@@ -269,6 +298,7 @@ nav {
 .x {
     width: 100%;
     align-items: start !important;
+    margin-bottom: 20px;
 }
 
 /* =========================================
@@ -357,7 +387,8 @@ nav {
     background-color: transparent;
     align-items: center;
     margin: 10px;
-    margin-top: 2px;
+    margin-top: 1px;
+
     padding: 0;
     border: 1px;
     cursor: pointer;
@@ -445,10 +476,14 @@ nav {
     align-self: start;
     display: flex;
     flex-wrap: wrap;
-    width: 100%;
+    width: 95%;
     max-height: 210px;
+    padding-left: 0;
+    margin-left: 0;
     align-items: center;
     justify-content: left;
+    background: linear-gradient(to bottom, #101010 90%, transparent);
+
 }
 .chat-title-panel img {
     width: auto;
@@ -480,6 +515,8 @@ nav {
     max-height: 90%;
     flex-grow: 1;
     overflow-y: auto;
+    background: radial-gradient(#161614 0%, transparent 70%);
+
 }
 .messages img {
     height: 80px;
@@ -488,7 +525,9 @@ nav {
 .message {
     display: flex;
     width: 95%;
-    padding: 10px;
+    /*padding: 10px;*/
+    /*padding-bottom: 0;*/
+    padding: 0;
     min-height: 120px;
 }
 .left {
