@@ -435,20 +435,27 @@ socket.on('need-access-token', function (data) {
         // тут расшифровали key получили чистый приватный ключ
 
         // тут
-        generateSignature(nonce, key).then(function(signature) {
+        generateSignature(nonce, key).then(async function(signature) {
 
             // ВЕСЬ код, которому нужна подпись, пишется только ЗДЕСЬ
             console.log("Подпись успешно создана!", signature);
-            socket.emit('verify_signature', {
-                login: login,
-                sig: signature,
-                public_key: public_key
-            });
+            const response = await fetch('http://127.0.0.1:5000/login', {method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_id: user_id,
+                    login: login,
+                    sig: signature,
+                    public_key: public_key})})
+
 
         }).catch(function(error) {
             // Если произошла ошибка (например, неверный ключ)
             console.error("Что-то пошло не так:", error);
         });
+
+
         // // тут должен быть вызов функции расшифровки текста
         // if (test_messages === 'hello world') {
         //

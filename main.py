@@ -291,24 +291,42 @@ def handle_verify_signature(data):
 
 @app.route('/login', methods=['POST'])
 def login(data):
-    token_manager = TokenManager(mysql)
-    access_token, refresh_token = token_manager.create_tokens(data['user_id'])
-    token_manager.close()
-    response = make_response(jsonify({
-        "access_token": access_token
-    }))
+    login = data.get('login')
+    signature = data.get('signature')
+    public_key = data.get('public_key')
 
-    response.set_cookie(
-        key='refresh_token',
-        value=refresh_token,
-        httponly=False,       # КРИТИЧНО: Запрещает JavaScript читать куку (защита от XSS-атак)
-        secure=False,         # КРИТИЧНО: Кука передается только по HTTPS (на localhost можно поставить False)
-        samesite='Strict',   # КРИТИЧНО: Защита от CSRF-атак (кука не уйдет, если запрос сделан с чужого сайта)
-        max_age=30 * 24 * 60 * 60, # Время жизни куки в браузере (в секундах, например 30 дней)
-        path='/refresh'      # СУПЕР-ОПТИМИЗАЦИЯ: Браузер будет прикреплять эту куку ТОЛЬКО к запросам на URL /refresh
-    )
+    key = f"nonce:{login}"
+    pipe = r.pipeline()
+    pipe.get(key)
+    pipe.delete(key)
+    results = pipe.execute()
 
-    return response
+    saved_nonce = results[0]
+
+    if not saved_nonce:
+        emit('auth', {'success': False, 'error': 'Nonce истек или не запрашивался'})
+        return None
+    if verify_nonce_signature(saved_nonce, signature, public_key):
+        token_manager = TokenManager(mysql)
+        access_token, refresh_token = token_manager.create_tokens(data['user_id'])
+        token_manager.close()
+        response = make_response(jsonify({
+          "access_token": access_token
+        }))
+
+        response.set_cookie(
+            key='refresh_token',
+            value=refresh_token,
+            httponly=False,       # КРИТИЧНО: Запрещает JavaScript читать куку (защита от XSS-атак)
+            secure=False,         # КРИТИЧНО: Кука передается только по HTTPS (на localhost можно поставить False)
+            samesite='Strict',   # КРИТИЧНО: Защита от CSRF-атак (кука не уйдет, если запрос сделан с чужого сайта)
+            max_age=30 * 24 * 60 * 60, # Время жизни куки в браузере (в секундах, например 30 дней)
+            path='/refresh'      # СУПЕР-ОПТИМИЗАЦИЯ: Браузер будет прикреплять эту куку ТОЛЬКО к запросам на URL /refresh
+        )
+        user_load_messages({'login': login, 'token': access_token})
+        return response
+    return None
+
 
 # Пример использования при обновлении:
 @app.route('/refresh', methods=['POST'])
