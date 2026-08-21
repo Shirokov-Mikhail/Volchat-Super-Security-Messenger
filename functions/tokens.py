@@ -1,7 +1,6 @@
 import jwt
 import datetime
 import uuid
-from db import DbTokenAccessCheck
 
 class TokenManager(DbTokenAccessCheck):
     def __init__(self, mysql):

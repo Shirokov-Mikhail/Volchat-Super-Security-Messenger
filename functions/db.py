@@ -1,3 +1,6 @@
+import jwt
+import uuid
+
 from werkzeug.security import generate_password_hash, check_password_hash
 import datetime
 
@@ -114,9 +117,9 @@ class DataBaseLoader:
         try:
             self.cur.execute(f'''SELECT EXISTS(SELECT 1 FROM users WHERE `Login` = '{login}');''')
             if int(self.cur.fetchall()[0][0]) == int(1):
-                self.cur.execute(f'''SELECT `id`, `test-message`, `private-key`, `public-key` FROM users WHERE `Login` = '{login}'; ''')
-                self.id, message, key, public = self.cur.fetchone()
-                self.message = message
+                self.cur.execute(f'''SELECT `id`, `iv`, `private_key`, `public_key` FROM users WHERE `Login` = '{login}'; ''')
+                self.id, iv, key, public = self.cur.fetchone()
+                self.message = iv
                 self.id = int(self.id)
                 self.key = key
                 self.public = public
@@ -140,10 +143,11 @@ class DataBaseLoader:
             print('check-login', e)
             return False
 
-    def registration(self, login, public_key, private_key, test_message):
+    def registration(self, login, public_key, private_key, iv):
         try:
             if self.check_login(login):
-                self.cur.execute(f'''INSERT INTO `users`(`Login`, `private-key`, `publick-key`, `test-message`) VALUES ('{login}','{private_key}','{public_key}','{test_message}'); ''')
+                print(login, public_key, private_key, iv, sep='\n')
+                self.cur.execute(f'''INSERT INTO `users`(`Login`, `private_key`, `public_key`, `iv`) VALUES ('{login}','{private_key}','{public_key}','{iv}');''')
                 self.mysql.connection.commit()
                 return True
             return False
@@ -376,3 +380,108 @@ class DbTokenAccessCheck(DataBaseLoader):
         except Exception as e:
             print(f"Ошибка при очистке старых токенов: {e}")
             self.mysql.connection.rollback()
+
+
+class TokenManager(DbTokenAccessCheck):
+    def __init__(self, mysql):
+        super().__init__(mysql)
+        self.ACCESS_SECRET = "super_secret_for_access"
+        self.REFRESH_SECRET = "super_secret_for_refresh"
+
+        self.ACCESS_MAX_AGE = 15 * 60  # 15 минут
+        self.REFRESH_MAX_AGE = 30 * 24 * 60 * 60  # 30 дней
+
+
+    def _generate_access(self, user_id: int) -> str:
+        now = datetime.datetime.now(datetime.timezone.utc)
+        payload = {
+            'user_id': user_id,
+            'type': 'access',
+            'exp': now + datetime.timedelta(seconds=self.ACCESS_MAX_AGE)
+        }
+        return jwt.encode(payload, self.ACCESS_SECRET, algorithm='HS256')
+
+    def _generate_refresh(self, user_id: int, jti: str) -> str:
+        now = datetime.datetime.now(datetime.timezone.utc)
+        payload = {
+            'user_id': user_id,
+            'type': 'refresh',
+            'jti': jti,
+            'exp': now + datetime.timedelta(seconds=self.REFRESH_MAX_AGE)
+        }
+        return jwt.encode(payload, self.REFRESH_SECRET, algorithm='HS256')
+
+    def verify_token(self, token_string: str, expected_type: str) -> dict:
+        if expected_type not in ['access', 'refresh']:
+            raise ValueError("expected_type должен быть 'access' или 'refresh'")
+
+        secret = self.ACCESS_SECRET if expected_type == 'access' else self.REFRESH_SECRET
+
+        try:
+            payload = jwt.decode(token_string, secret, algorithms=['HS256'])
+
+            if payload.get('type') != expected_type:
+                raise ValueError(f"Неверный тип токена. Ожидался: {expected_type}")
+
+            if expected_type == 'refresh':
+                jti = payload.get('jti')
+                if not self.checkRefreshToken(jti):
+                    raise ValueError("Refresh-токен аннулирован (не найден в базе данных)")
+
+            return payload
+
+        except jwt.ExpiredSignatureError:
+            raise ValueError(f"Срок действия {expected_type}-токена истек")
+        except jwt.InvalidTokenError:
+            raise ValueError(f"Недействительный {expected_type}-токен")
+
+    def check_token(self, token_string: str, expected_type: str) -> list:
+        try:
+            self.verify_token(token_string, expected_type)
+            return [True, None]
+        except ValueError as e:
+            return [False, f'{e}']
+
+    def create_tokens(self, user_id: int):
+        jti = str(uuid.uuid4())
+
+        access_token = self._generate_access(user_id)
+        refresh_token = self._generate_refresh(user_id, jti)
+
+        self.addRefreshToken(jti, self.REFRESH_MAX_AGE)
+
+        return access_token, refresh_token
+
+    def refresh_access_token(self, refresh_token_string: str) -> str:
+        try:
+
+            payload = self.verify_token(refresh_token_string, expected_type='refresh')
+            user_id = payload.get('user_id')
+            return self._generate_access(user_id)
+        except ValueError as e:
+            raise ValueError(f"Block users")
+
+        finally:
+            raise Exception("Fatality server error")
+
+    def rotate_tokens(self, refresh_token_string: str):
+        try:
+
+            payload = self.verify_token(refresh_token_string, expected_type='refresh')
+
+            old_jti = payload.get('jti')
+            user_id = payload.get('user_id')
+
+            new_jti = str(uuid.uuid4())
+            self.updateRefreshToken(old_jti, new_jti, self.REFRESH_MAX_AGE)
+
+            new_access = self._generate_access(user_id)
+            new_refresh = self._generate_refresh(user_id, new_jti)
+
+            return new_access, new_refresh
+        except ValueError as e:
+            raise ValueError(f"Block users")
+
+        finally:
+            raise Exception("Fatality server error")
+

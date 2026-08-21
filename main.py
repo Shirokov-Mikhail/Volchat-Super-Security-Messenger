@@ -8,8 +8,7 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify, s
 from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
 from sqlalchemy.util.langhelpers import tag_method_for_warnings
 
-from functions.db import DB, DataBaseLoader, DbTokenAccessCheck
-from functions.tokens import TokenManager
+from functions.db import DB, DataBaseLoader, DbTokenAccessCheck, TokenManager
 from functions.nonce import *
 
 app = Flask(__name__)
@@ -67,7 +66,7 @@ def start_session(data):
     try:
         status = data['status']
         id = int(data['id'])
-        data = {
+        base = {
             "status": 'success',
             "clients": [],
             'error': None,
@@ -75,13 +74,14 @@ def start_session(data):
         }
         db = TokenManager(mysql)
         if db.check_token(data['token'], 'access')[0]:
-            data['clients'] = db.loadChats(id)
-            data['token'] = 'asd'
-            emit('start-session', data)
+
+            base['clients'] = db.loadChats(id)
+            base['token'] = 'asd'
+            emit('start-session', base)
         else:
-            data['token'] = None
-            data['status'] = 'error'
-            emit('start-session', data)
+            base['token'] = None
+            base['status'] = 'error'
+            emit('start-session', base)
             disconnect()
 
     except Exception as e:
@@ -102,6 +102,13 @@ def user_load_messages(data):
     db = TokenManager(mysql)
     login.capitalize()
     if db.auth(login):
+        print('мы тут', data, {'status': 'success',
+                               'login': login,
+                               'id': db.id,
+                               'private-key': db.key,
+                               'public-key': db.public
+            ,'iv': db.message
+                               })
         if not data['token']:
             nonce = generate_nonce()
             r.setex(name=f"nonce:{login}", time=60, value=nonce)
@@ -111,6 +118,7 @@ def user_load_messages(data):
                                        'private-key': db.key,
                                        'public-key': db.public,
                                        'nonce': nonce
+                                       ,'iv': db.message
                                        })
         elif not db.check_token(data['token'], 'access')[0]:
             emit('need-new-access-token', {'status': 'success'})
@@ -118,8 +126,9 @@ def user_load_messages(data):
             # тут придется повторить запрос
             emit('auth', {'status': 'success',
                           'id': db.id,
-                          'key-verifi': db.message,
-                          'key': db.key
+                          'iv': db.message,
+                          'private': db.key,
+                          'public': db.public
                           })
     else:
         emit('auth', {
@@ -175,6 +184,7 @@ def load_chat(data):
 @socketio.on('registration-check')
 def register(data):
     login = data['login']
+
     db = DataBaseLoader(mysql)
     login.capitalize()
     if db.check_login(login):
@@ -186,14 +196,25 @@ def register(data):
 @socketio.on('registration')
 def registration(data):
     login = str(data['login'])
-    public_key = data['public_key']
-    private_key = data['private_key']
-    test_message = data['test-message']
+    public = data['public_key']
+    private = data['private_key']
+    iv = data['iv']
     db = DataBaseLoader(mysql)
-
-    if db.registration(login, public_key, private_key, test_message):
+    if db.registration(login, public, private, iv):
         id = db.select_id(login)
-        emit('need-new-access-token', {'status': 'success'})
+        nonce = generate_nonce()
+
+        print('мы в обычной регистрации и регнулись в бд')
+        r.set(name=f"nonce:{login}", value=nonce, ex=60)
+        emit('need-access-token', {'status': 'success',
+                                   'login': login,
+                                   'id': id,
+                                   'private-key': private,
+                                   'public-key': public,
+                                   'nonce': nonce,
+                                   'iv': iv
+                                   })
+
         emit('registration', {'status': 'success',
                                        'id': id})
     else:
