@@ -9,7 +9,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
 from sqlalchemy.util.langhelpers import tag_method_for_warnings
 
 from functions.db import DB, DataBaseLoader, DbTokenAccessCheck, TokenManager
-from functions.nonce import *
+from functions.nonce import verify_nonce_signature, generate_nonce
 
 app = Flask(__name__)
 app.config["MYSQL_HOST"] = "localhost"
@@ -54,8 +54,12 @@ def handle_connect(auth):
     try:
         # Проверяем токен
         payload = token_menager.verify_token(token, 'access')
-        print(f"Пользователь {payload.get('id')} успешно подключен (SID: {request.sid})")
 
+        db = DataBaseLoader(mysql)
+        login = db.select_user_id_where_login(payload.get('user_id'))
+        print(f"Пользователь {payload.get('user_id')} успешно подключен (SID: {request.sid})")
+        print({'login': str(login), 'token': token, 'id': payload.get('user_id')})
+        user_load_messages({'login': login, 'token': token, 'id': payload.get('user_id')})
 
     except ValueError as e:
         print(e)
@@ -95,7 +99,7 @@ def start_session(data):
         emit('start-session', data)
 
 
-# супер нужная функция
+# супер нужная функциямы
 @socketio.on('auth')
 def user_load_messages(data):
     login: str = data['login']
@@ -109,9 +113,9 @@ def user_load_messages(data):
                                'public-key': db.public
             ,'iv': db.message
                                })
-        if not data['token']:
+        if not data['token'] or not db.check_token(data['token'], 'access')[0]:
             nonce = generate_nonce()
-            r.setex(name=f"nonce:{login}", time=60, value=nonce)
+            r.set(name=f"nonce:{login}", value=nonce, ex=60)
             emit('need-access-token', {'status': 'success',
                                        'login': login,
                                        'id': db.id,
@@ -122,7 +126,8 @@ def user_load_messages(data):
                                        })
         elif not db.check_token(data['token'], 'access')[0]:
             emit('need-new-access-token', {'status': 'success'})
-        else:
+        elif db.check_token(data['token'], 'access')[0]:
+            print(True)
             # тут придется повторить запрос
             emit('auth', {'status': 'success',
                           'id': db.id,
@@ -188,7 +193,8 @@ def register(data):
     db = DataBaseLoader(mysql)
     login.capitalize()
     if db.check_login(login):
-        emit('registration-check', {'status': 'success'})
+        db.fast_registration(login)
+        emit('registration-check', {'status': 'success', 'user_id': db.id})
     else:
         emit('registration-check', {'status': 'error'})
 
@@ -311,11 +317,16 @@ def handle_verify_signature(data):
 
 
 @app.route('/login', methods=['POST'])
-def login(data):
-    login = data.get('login')
-    signature = data.get('signature')
-    public_key = data.get('public_key')
+def login():
 
+    data = request.json
+    print(data)
+    login = data.get('login')
+    signature = data.get('sig')
+    db = DataBaseLoader(mysql)
+    user_id = data.get('user_id')
+    public_key = db.publickey_for_user_id(user_id)[0]
+    print('мы в логине ')
     key = f"nonce:{login}"
     pipe = r.pipeline()
     pipe.get(key)
@@ -323,11 +334,13 @@ def login(data):
     results = pipe.execute()
 
     saved_nonce = results[0]
-
+    print(saved_nonce)
+    print(key, signature, public_key)
     if not saved_nonce:
         emit('auth', {'success': False, 'error': 'Nonce истек или не запрашивался'})
         return None
     if verify_nonce_signature(saved_nonce, signature, public_key):
+        print('можем вернуть')
         token_manager = TokenManager(mysql)
         access_token, refresh_token = token_manager.create_tokens(data['user_id'])
         token_manager.close()
@@ -344,7 +357,7 @@ def login(data):
             max_age=30 * 24 * 60 * 60, # Время жизни куки в браузере (в секундах, например 30 дней)
             path='/refresh'      # СУПЕР-ОПТИМИЗАЦИЯ: Браузер будет прикреплять эту куку ТОЛЬКО к запросам на URL /refresh
         )
-        user_load_messages({'login': login, 'token': access_token})
+        # user_load_messages({'login': login, 'token': access_token})
         return response
     return None
 

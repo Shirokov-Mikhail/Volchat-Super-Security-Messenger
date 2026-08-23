@@ -115,7 +115,9 @@ class DataBaseLoader:
 
     def auth(self, login):
         try:
+
             self.cur.execute(f'''SELECT EXISTS(SELECT 1 FROM users WHERE `Login` = '{login}');''')
+
             if int(self.cur.fetchall()[0][0]) == int(1):
                 self.cur.execute(f'''SELECT `id`, `iv`, `private_key`, `public_key` FROM users WHERE `Login` = '{login}'; ''')
                 self.id, iv, key, public = self.cur.fetchone()
@@ -143,14 +145,28 @@ class DataBaseLoader:
             print('check-login', e)
             return False
 
+    def select_user_id_where_login(self, id):
+        self.cur.execute(f'''SELECT `Login` FROM `users` WHERE `id`='{id}'; ''')
+        db_data = self.cur.fetchone()
+        return db_data[0]
+
+    def fast_registration(self, login):#выделяем место под пользователя
+        try:
+            self.cur.execute(f'''INSERT INTO `users`(`Login`, `private_key`, `public_key`, `iv`) VALUES ('{login}','{None}','{None}','{None}');''')
+            self.mysql.connection.commit()
+            self.cur.execute(f''' SELECT `id` FROM `users` WHERE `Login`='{login}';''')
+            self.id = self.cur.fetchone()[0]
+            return
+        except Exception as e:
+            print('fast-registration', e)
+
     def registration(self, login, public_key, private_key, iv):
         try:
-            if self.check_login(login):
-                print(login, public_key, private_key, iv, sep='\n')
-                self.cur.execute(f'''INSERT INTO `users`(`Login`, `private_key`, `public_key`, `iv`) VALUES ('{login}','{private_key}','{public_key}','{iv}');''')
-                self.mysql.connection.commit()
-                return True
-            return False
+
+            print(login, public_key, private_key, iv, sep='\n')
+            self.cur.execute(f'''UPDATE `users` SET `private_key`='{private_key}',`public_key`='{public_key}',`iv`='{iv}' WHERE `Login`='{login}';''')
+            self.mysql.connection.commit()
+            return True
         except Exception as e:
             print('registration', e)
             return False
@@ -300,6 +316,14 @@ class DataBaseLoader:
         if self.cur:
             self.cur.close()
 
+    def publickey_for_user_id(self, user_id):
+        try:
+            self.cur.execute(f'''SELECT `public_key` FROM `users` WHERE `id`={user_id};''')
+            result = self.cur.fetchone()
+            return result
+        except Exception as e:
+            print(e)
+
 #для работы с токенами
 class DbTokenAccessCheck(DataBaseLoader):
     def __init__(self, mysql):
@@ -388,7 +412,7 @@ class TokenManager(DbTokenAccessCheck):
         self.ACCESS_SECRET = "super_secret_for_access"
         self.REFRESH_SECRET = "super_secret_for_refresh"
 
-        self.ACCESS_MAX_AGE = 15 * 60  # 15 минут
+        self.ACCESS_MAX_AGE = 60 * 60  # 15 минут
         self.REFRESH_MAX_AGE = 30 * 24 * 60 * 60  # 30 дней
 
 
