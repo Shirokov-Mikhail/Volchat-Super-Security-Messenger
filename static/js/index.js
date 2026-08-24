@@ -43,15 +43,15 @@ const new_chat_panel = document.getElementById("new-chat-panel");
 let username_local = localStorage.getItem('username') || undefined; // имя пользователя
 let user_id = localStorage.getItem('user_id') || undefined;// id пользователя
 let chats = [];// список чатов чтобы не приходилось заново подгружать
-let user_key = localStorage.getItem('user_key') || undefined; // публичный ключ пользователя
+let publickey = localStorage.getItem('user_key') || undefined; // публичный ключ пользователя
 let current_chat_id = -1;// текущий id чата все id больше 0 изначально чтобы не закртыть существующую комнату -1
 let privatekey = localStorage.getItem('private') || undefined;// приватный ключ пользователя
-let publickey;// публичный ключ собеседника
+let companion_key;// публичный ключ собеседника
 let helman_key; // симетричный ключ который будет сгенерирован из публичного и приватного
 let new_chat_activity = false;// если идет создание нового чата то true
 let users_selected = [];// выбранные пользователи при создании нового чат
 let famous_users = [] // чтобы не подгружать заново контакты
-let jwt_token = localStorage.getItem('jwt_token') || undefined;// jwt ТОКЕН потом localStorage.getItem('jwt_token');
+let jwt_token = localStorage.getItem('jwt_token') || '';// jwt ТОКЕН потом localStorage.getItem('jwt_token');
 let iv = localStorage.getItem('iv') || undefined; // вектор инициализации
 // а
 const socket = io("http://127.0.0.1:5000", {auth: {token: jwt_token}, login: username_local});
@@ -82,9 +82,7 @@ socket.on('start-session', function (data) {
 //проверка для авторизации
 function auth() {
     if (email_auth.value !== '' && password_auth.value !== '') {
-        if (jwt_token === undefined) {
-            jwt_token = localStorage.getItem('jwt_token') || '';
-        }
+
         socket.emit('auth', {
             'token':jwt_token,
             'login': email_auth.value
@@ -102,7 +100,7 @@ socket.on('auth',async function (data) {
         auth_error.style.display = 'none';
         auth_pass_error.style.display = 'none';
         password_auth.style.borderColor = 'black';
-        user_key = data['public']/*Свой публичный ключ*/
+        publickey = data['public']/*Свой публичный ключ*/
         user_id = data['id']
         if (privatekey === undefined) {
             privatekey = await decryptPrivateKey(data['private'], data['iv'], user_id, password_auth.value);
@@ -110,7 +108,7 @@ socket.on('auth',async function (data) {
         }
         iv = data['iv']
         localStorage.setItem('iv', iv);
-        localStorage.setItem('user_key', user_key);
+        localStorage.setItem('user_key', publickey);
         localStorage.setItem('user_id', user_id);
         if (email_auth.value !== '' && username_local !== undefined) {
             username_local = email_auth.value
@@ -147,14 +145,14 @@ socket.on('registration-check', async function (data) {
 
         login.style.borderColor = 'black';
         login_error.style.display = 'none';
-        // тут генераци ключей в переменную user_key и своего публичного в локалюную public_key_local
+        // тут генераци ключей в переменную publickey и своего публичного в локалюную public_key_local
         const keyPair = await generateKeyPair();
         const keys = await extractKeys(keyPair);
-        user_key = keys.originalPublicKey;
+        publickey = keys.originalPublicKey;
         privatekey = keys.originalPrivateKey;
         localStorage.setItem('private', privatekey);
         // let public_key_local = ''
-        // user_key = '';
+        // publickey = '';
         user_id = data['user_id']
         username_local = login.value;
 
@@ -171,9 +169,9 @@ socket.on('registration-check', async function (data) {
         // теперь если все успешно отпровляем снова емит но об регистрации
         localStorage.setItem('username', username_local)
         localStorage.setItem('user_id', user_id);
-        localStorage.setItem('user_key', user_key);
+        localStorage.setItem('user_key', publickey);
         console.log('da', {
-            'user_key': user_key,
+            'user_key': publickey,
             'login': username_local,
             'public_key': publicKeyForDB,
             'private_key': encryptedPrivateKeyForDB,
