@@ -115,7 +115,6 @@ class DataBaseLoader:
 
     def auth(self, login):
         try:
-
             self.cur.execute(f'''SELECT EXISTS(SELECT 1 FROM users WHERE `Login` = '{login}');''')
 
             if int(self.cur.fetchall()[0][0]) == int(1):
@@ -212,8 +211,10 @@ class DataBaseLoader:
             out = [i[0] for i in self.cur.fetchall()]
             self.cur.execute(f'''SELECT `content` FROM `messages` WHERE `chat_id`='{chat_id}' AND `author_id`<>'{user_id}';''')
             into = [i[0] for i in self.cur.fetchall()]
-            self.cur.execute(f'''SELECT `content`, `author_id` FROM `messages` WHERE `chat_id`='{chat_id}';''')
-            all = [(i[0], True if int(i[1]) == user_id else False) for i in self.cur.fetchall()]
+            self.cur.execute(f'''SELECT `content`, `author_id`, `iv` FROM `messages` WHERE `chat_id`='{chat_id}';''')
+
+            all = [(i[0], True if int(i[1]) == user_id else False, i[2]) for i in self.cur.fetchall()]
+            print(all)
             return out, into, all
         except Exception as e:
             print('load-messages', e)
@@ -235,19 +236,20 @@ class DataBaseLoader:
         try:
             if self.serchUserInfo(user_id, chat_id):
 
-                self.cur.execute(f''' SELECT `Login` FROM `users` WHERE `id`='{self.friend_id}';''')
-                friend_login = self.cur.fetchone()[0]
-                return friend_login
+                self.cur.execute(f''' SELECT `Login`, `public_key` FROM `users` WHERE `id`='{self.friend_id}';''')
+                friend_login, public_key = self.cur.fetchone()
+                print('load_Friends_Info', friend_login, public_key)
+                return friend_login, public_key
             else:
                 raise ValueError('User not found')
         except Exception as e:
             print('load Friends info', e)
             return ''
 
-    def send_messages(self, message, user_id, chat_id, type_message='text'):
+    def send_messages(self, message, user_id, chat_id, iv, type_message='text'):
         try:
-            if type_message == 'text':
-                self.cur.execute(f'''INSERT INTO `messages`(`chat_id`, `author_id`, `content`) VALUES ('{chat_id}','{user_id}','{message}') ''')
+            if type_message == 'text' or True:
+                self.cur.execute(f'''INSERT INTO `messages`(`chat_id`, `author_id`, `content`, `iv`) VALUES ('{chat_id}','{user_id}','{message}','{iv}') ''')
             else:
                 self.cur.execute(f'''INSERT INTO `messages`(`chat_id`, `author_id`, `content`, `type`) VALUES ('{chat_id}','{user_id}','{message}','{type_message}') ''')
             self.mysql.connection.commit()

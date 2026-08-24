@@ -78,7 +78,6 @@ def start_session(data):
             'token': []
         }
         db = TokenManager(mysql)
-        print('data', data)
         if db.check_token(data['token'], 'access')[0]:
 
             base['clients'] = db.loadChats(id)
@@ -108,13 +107,7 @@ def user_load_messages(data):
     db = TokenManager(mysql)
     login.capitalize()
     if db.auth(login):
-        print('мы тут', data, {'status': 'success',
-                               'login': login,
-                               'id': db.id,
-                               'private-key': db.key,
-                               'public-key': db.public
-            ,'iv': db.message
-                               })
+
         if not data['token'] or not db.check_token(data['token'], 'access')[0]:
             nonce = generate_nonce()
             r.set(name=f"nonce:{login}", value=nonce, ex=60)
@@ -152,7 +145,7 @@ def load_chat(data):
         if db.check_token(data['token'], 'access')[0]:
             out, into, all = db.loadMessages(data['user_id'], data['chat_id'])
             leave_room(f'chat_{data['old_chat_id']}')
-            friend_login = db.load_Friends_Info(data['user_id'], data['chat_id'])
+            friend_login, friend_public = db.load_Friends_Info(data['user_id'], data['chat_id'])
             room_name = f"chat_{data['chat_id']}"
             join_room(room_name)
             friend_id = db.friend_id
@@ -161,7 +154,8 @@ def load_chat(data):
                            'into': list(into),
                            'all': list(all),
                            'friend_login': friend_login,
-                           'friend_id': friend_id
+                           'friend_id': friend_id,
+                            'friend_public': friend_public
                            })
             return
         else:
@@ -233,16 +227,18 @@ def registration(data):
 
 @socketio.on('send-message')
 def sending_messages(data):
-    message = escape(data['message'])
+    message = str(data['message'])
     user_id = data['user_id']
     chat_id = data['chat_id']
+    iv = data['iv']
     db = TokenManager(mysql)
-    if db.send_messages(message, user_id, chat_id) and db.check_token(data['token'], 'access')[0]:
+    if db.send_messages(message, user_id, chat_id, iv) and db.check_token(data['token'], 'access')[0]:
         room_name = f"chat_{chat_id}"
         emit('new-message', {'status': 'success',
                              'author_id': user_id,
                              'chat_id': chat_id
-                             ,'text': message}, to=room_name)
+                             ,'text': message,
+                             'iv': iv}, to=room_name)
         # emit('load-chat', {'status': 'success',
         #                    'out': list(out),
         #                    'into': list(into),
@@ -282,7 +278,6 @@ def make_new_chat(data):
             users_id = owner_id + users_id
             chat_id, chat_name = db.new_chat(str(data['name']), users_id, type=chat_type)
             if chat_name:
-                print('daaa')
                 emit('make_new_chat', {'status': 'success',  'chat_id': chat_id,
                                    'chat_name': chat_name})
                 load_chat({
@@ -323,13 +318,11 @@ def handle_verify_signature(data):
 def login():
 
     data = request.json
-    print(data)
     login = data.get('login')
     signature = data.get('sig')
     db = DataBaseLoader(mysql)
     user_id = data.get('user_id')
     public_key = db.publickey_for_user_id(user_id)[0]
-    print('мы в логине ')
     key = f"nonce:{login}"
     pipe = r.pipeline()
     pipe.get(key)
@@ -337,8 +330,6 @@ def login():
     results = pipe.execute()
 
     saved_nonce = results[0]
-    print(saved_nonce)
-    print(key, signature, public_key)
     if not saved_nonce:
         emit('auth', {'success': False, 'error': 'Nonce истек или не запрашивался'})
         return None

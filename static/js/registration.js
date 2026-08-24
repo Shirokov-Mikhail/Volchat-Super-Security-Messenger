@@ -36,6 +36,7 @@ async function loadDecryptedKeyFromLocal(storageKeyName = 'my_active_private_key
     console.log("Ключ успешно извлечен и готов к работе!");
     return workingKey;
 }
+
 /* 1. Генерация ключей шифрования пользователя */
 async function generateKeyPair() {
     const keyPair = await window.crypto.subtle.generateKey(
@@ -84,6 +85,7 @@ function base64ToUint8Array(base64) {
 }
 
 /* 3. Шифрование сырых байт приватного ключа паролем */
+
 // Обрати внимание: теперь функция принимает уже извлеченные privateKeyBytes
 async function encryptPrivateKey(privateKeyBytes, userId, password) {
     const encoder = new TextEncoder();
@@ -91,7 +93,7 @@ async function encryptPrivateKey(privateKeyBytes, userId, password) {
     const passwordKeyMaterial = await window.crypto.subtle.importKey(
         "raw",
         encoder.encode(password),
-        { name: "PBKDF2" },
+        {name: "PBKDF2"},
         false,
         ["deriveKey"]
     );
@@ -106,14 +108,14 @@ async function encryptPrivateKey(privateKeyBytes, userId, password) {
             hash: "SHA-256"
         },
         passwordKeyMaterial,
-        { name: "AES-GCM", length: 256 },
+        {name: "AES-GCM", length: 256},
         false,
         ["encrypt"]
     );
 
     const iv = window.crypto.getRandomValues(new Uint8Array(12));
     const encryptedPrivateKeyBuffer = await window.crypto.subtle.encrypt(
-        { name: "AES-GCM", iv: iv },
+        {name: "AES-GCM", iv: iv},
         aesKey,
         privateKeyBytes
     );
@@ -131,7 +133,7 @@ async function decryptPrivateKey(encryptedKeyBase64, ivBase64, userId, password)
     const passwordKeyMaterial = await window.crypto.subtle.importKey(
         "raw",
         encoder.encode(password),
-        { name: "PBKDF2" },
+        {name: "PBKDF2"},
         false,
         ["deriveKey"]
     );
@@ -146,7 +148,7 @@ async function decryptPrivateKey(encryptedKeyBase64, ivBase64, userId, password)
             hash: "SHA-256"
         },
         passwordKeyMaterial,
-        { name: "AES-GCM", length: 256 },
+        {name: "AES-GCM", length: 256},
         false,
         ["decrypt"]
     );
@@ -155,7 +157,7 @@ async function decryptPrivateKey(encryptedKeyBase64, ivBase64, userId, password)
     const iv = base64ToUint8Array(ivBase64);
 
     const decryptedPrivateKeyBuffer = await window.crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: iv },
+        {name: "AES-GCM", iv: iv},
         aesKey,
         encryptedBytes
     );
@@ -164,7 +166,7 @@ async function decryptPrivateKey(encryptedKeyBase64, ivBase64, userId, password)
     return await window.crypto.subtle.importKey(
         "pkcs8",
         decryptedPrivateKeyBuffer,
-        { name: "ECDH", namedCurve: "P-256" },
+        {name: "ECDH", namedCurve: "P-256"},
         true,
         ["deriveKey", "deriveBits"]
     );
@@ -192,12 +194,137 @@ async function importFriendPublicKey(jwkKey) {
     return await window.crypto.subtle.importKey(
         "jwk",
         jwkKey,
-        { name: "ECDH", namedCurve: "P-256" },
+        {name: "ECDH", namedCurve: "P-256"},
         true,
         []
     );
 }
 
-console.log(await decryptPrivateKey('nGLi5mLxUXnbezBslyglJgbR0Pq6nGgjgj19w35Sv8Sh9xKW0P6maF15oV6lpcHjHhxcjaf3/ueP20vy4V/q49s6b9XEWMEW1sblrgMznCaTnx4YDPFldWMLrfR07SbbgOxFwN0Z+FP9s5P7JmfZni4XAHPruzrFmEjV3E4bISzlG40m+3FV/cX06AH89XpNa+183g+6r5bcAw=='
-    , '931pvBLaU6PRcrxX', 72, 'q1w2e3r4t5'));
+async function importFriendPublicKey(jwkKey) {
+    return await window.crypto.subtle.importKey(
+        "jwk",
+        jwkKey,
+        {name: "ECDH", namedCurve: "P-256"},
+        true,
+        []
+    );
+}
 
+/**
+ * Шифрование сообщения перед отправкой
+ * @param {CryptoKey} sharedAesKey - Симметричный ключ AES-GCM (сгенерированный Хеллманом)
+ * @param {string} textMessage - Исходный текст сообщения от пользователя
+ * @returns {Promise<Object>} Зашифрованный текст и вектор инициализации в Base64
+ */
+async function encryptChatMessage(sharedAesKey, textMessage) {
+    const encoder = new TextEncoder();
+    const encodedText = encoder.encode(textMessage);
+
+    // Вектор инициализации (IV) обязательно генерируется заново для КАЖДОГО сообщения[cite: 1, 4]
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+
+    // Шифруем данные симметричным ключом[cite: 1, 4]
+    const cipherTextBuffer = await window.crypto.subtle.encrypt(
+        {name: "AES-GCM", iv: iv},
+        sharedAesKey,
+        encodedText
+    );
+
+    return {
+        cipherTextBase64: bufferToBase64(cipherTextBuffer),
+        ivBase64: bufferToBase64(iv) // Открыто передаем вектор собеседнику вместе с сообщением[cite: 1, 4]
+    };
+}
+
+/**
+ * Расшифровка входящего сообщения
+ * @param {CryptoKey} sharedAesKey - Тот же общий симметричный ключ чата
+ * @param {string} cipherTextBase64 - Зашифрованный текст из базы данных/сокетов
+ * @param {string} ivBase64 - Вектор инициализации, пришедший вместе с сообщением
+ * @returns {Promise<string|null>} Расшифрованный текст или null при ошибке
+ */
+async function decryptChatMessage(sharedAesKey, cipherTextBase64, ivBase64) {
+    try {
+        // Подготавливаем бинарные данные для алгоритма[cite: 1, 4]
+        const cipherTextBuffer = base64ToUint8Array(cipherTextBase64);
+        const iv = base64ToUint8Array(ivBase64);
+
+        // Расшифровываем, используя ТОТ ЖЕ вектор, с которым шифровалось сообщение[cite: 1, 4]
+        const decryptedBuffer = await window.crypto.subtle.decrypt(
+            {name: "AES-GCM", iv: iv},
+            sharedAesKey,
+            cipherTextBuffer
+        );
+
+        // Декодируем байты обратно в читаемую строку[cite: 1, 4]
+        const decoder = new TextDecoder();
+        return decoder.decode(decryptedBuffer);
+
+    } catch (error) {
+        console.error("Ошибка расшифровки сообщения! Данные повреждены или неверный ключ:", error);
+        return null;
+    }
+}
+
+async function privateKeyToJWK(privateKey) {
+    // Экспортируем рабочий CryptoKey в формат JWK
+    const jwkKey = await window.crypto.subtle.exportKey("jwk", privateKey);
+
+    return jwkKey;
+    // Если нужно получить текстовую строку для передачи,
+    // используйте: return JSON.stringify(jwkKey);
+}
+
+async function jwkToPrivateKey(jwkKey) {
+    // Если jwkKey пришел в виде строки, сначала сделайте:
+    // const parsedJwk = typeof jwkKey === 'string' ? JSON.parse(jwkKey) : jwkKey;
+
+    // Импортируем JWK обратно в работоспособный объект CryptoKey[cite: 1, 3, 4]
+    const privateKey = await window.crypto.subtle.importKey(
+        "jwk",
+        jwkKey,
+        {
+            name: "ECDH",
+            namedCurve: "P-256"
+        },
+        true, // Разрешаем извлечение ключа в будущем[cite: 1, 3, 4]
+        ["deriveKey", "deriveBits"] // Права для генерации Хеллмана[cite: 1, 3, 4]
+    );
+
+    return privateKey;
+}
+
+(async () => {
+    try {
+        console.log("=== Тест шифрования 'hello world' ===");
+
+        // 1. Имитируем двух пользователей: генерируем две пары ключей вашей функцией
+        const aliceKeys = await generateKeyPair();
+        const bobKeys = await generateKeyPair();
+
+        // 2. Генерируем общий AES-ключ вашей функцией (Алиса использует свой приватный и публичный Боба)
+        const sharedAesKey = await deriveSharedAESKey(aliceKeys.privateKey, bobKeys.publicKey);
+
+        // 3. Исходное сообщение
+        const message = "hello world";
+        console.log("Исходное сообщение:", message);
+
+        // 4. Шифруем вашей функцией
+        const encryptedData = await encryptChatMessage(sharedAesKey, message);
+
+        console.log("🔒 Шифротекст (Base64):", encryptedData.cipherTextBase64);
+        console.log("🔑 IV (Base64):", encryptedData.ivBase64);
+
+        // 5. Расшифровываем вашей функцией
+        const decryptedMessage = await decryptChatMessage(
+            sharedAesKey,
+            encryptedData.cipherTextBase64,
+            encryptedData.ivBase64
+        );
+
+        console.log("✅ Расшифрованное сообщение:", decryptedMessage);
+
+    } catch (error) {
+        console.error("Ошибка выполнения:", error);
+    }
+})();
