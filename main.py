@@ -21,19 +21,20 @@ app.config['SECRET_KEY'] = "Volchatus45Naperdatus7211"
 ACCESS_SECRET="ваша_постоянная_строка_которую_знает_только_сервер"
 REFRESH_SECRET="другая_постоянная_строка_которую_знает_только_сервер"
 
-SECRET_KEY = "Volchatus45Naperdatus7211"
-app.secret_key = 'Volchatus45Naperdatus7211'
-app.config['SESSION_COOKIE_HTTPONLY'] = True
 
 app.config['SESSION_COOKIE_SECURE'] = False  # отключить при https
 
-app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
 app.config['SESSION_COOKIE_HTTPONLY'] = False #True при https
 app.config['SESSION_COOKIE_SAMESITE'] = 'None' # Или 'Lax', если фронт и бек на одном домене
+SECRET_KEY = "Volchatus45Naperdatus7211"
+app.secret_key = 'Volchatus45Naperdatus7211'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
+
 app.config['SESSION_TYPE'] = 'filesystem'
 
 mysql = MySQL(app)
-socketio = SocketIO(app, cors_allowed_origins="*", manage_session=True)
+socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False)
 r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
 
@@ -77,6 +78,7 @@ def start_session(data):
             'token': []
         }
         db = TokenManager(mysql)
+        print('data', data)
         if db.check_token(data['token'], 'access')[0]:
 
             base['clients'] = db.loadChats(id)
@@ -174,6 +176,7 @@ def load_chat(data):
                                })
             return
     except Exception as e:
+        print(e)
         print('load-chat', e)
         if db:
             db.close()

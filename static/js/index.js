@@ -82,9 +82,13 @@ socket.on('start-session', function (data) {
 //проверка для авторизации
 function auth() {
     if (email_auth.value !== '' && password_auth.value !== '') {
+        if (jwt_token === undefined) {
+            jwt_token = localStorage.getItem('jwt_token') || '';
+        }
         socket.emit('auth', {
-            'login': email_auth.value,
-            'token':jwt_token
+            'token':jwt_token,
+            'login': email_auth.value
+
         })
     }
 
@@ -112,8 +116,8 @@ socket.on('auth',async function (data) {
             username_local = email_auth.value
             localStorage.setItem('username', username_local)
         }
-        console.log('next step')
-        socket.emit('start-session', {'status': 'success', 'id': user_id, 'login': username_local, 'token':jwt_token})
+        console.log('next step', typeof jwt_token)
+        socket.emit('start-session', {'status': 'success', 'token':jwt_token, 'id': user_id, 'login': username_local})
         }
      else {
         auth_error.style.display = 'block';
@@ -457,9 +461,9 @@ socket.on('need-access-token', async function (data) {
         let iv = data['iv'];
         let login = data['login'];
 
-        console.log('yes', user_local_id, public_key, nonce, iv, login);
+        console.log('yes', user_local_id, public_key, nonce, iv, login, privatekey);
 
-        if (privatekey !== undefined) {
+        if (privatekey !== undefined && user_id !== undefined && user_id === user_local_id) {
             // Ключ уже есть в памяти (например, после регистрации)
             console.log("Используем ключ из памяти");
         } else {
@@ -468,7 +472,7 @@ socket.on('need-access-token', async function (data) {
                 let activePrivateKey = await decryptPrivateKey(
                     key,
                     iv,
-                    login, // Наша "соль" (логин)
+                    user_local_id, // Наша "соль" (логин)
                     password_auth.value
                 );
                 // Сохраняем расшифрованный ключ в память для работы чата
@@ -507,7 +511,7 @@ socket.on('need-access-token', async function (data) {
             console.log("Ответ сервера:", result);
 
             if (response.ok && result.access_token) {
-                let jwt_token = result.access_token;
+                jwt_token = result.access_token;
 
                 localStorage.setItem('jwt_token', jwt_token);
                 console.log("Токен успешно сохранен:", jwt_token);
