@@ -13,7 +13,7 @@ const x_close = document.getElementById("close_auth");
 
 // основные элементы главной страницы
 const contacts = document.getElementById("contacts");
-
+const gradientBox = document.querySelector('.gradient-image');
 const username = document.getElementById("name");
 const messages_list = document.getElementById("messages");
 const send_button = document.getElementById("send-button");
@@ -707,6 +707,25 @@ send_message.addEventListener('input', (event) => {
     }
 })
 
+if (gradientBox) {
+    gradientBox.addEventListener('mousemove', (e) => {
+        const rect = gradientBox.getBoundingClientRect();
+
+        const x = (e.clientX - rect.left) / rect.width;
+        const y = (e.clientY - rect.top) / rect.height;
+
+        const posX = 40 + (x * 20);
+        const posY = 40 + (y * 20);
+
+        gradientBox.style.backgroundPosition = `${posX}% ${posY}%`;
+    });
+
+    gradientBox.addEventListener('mouseleave', () => {
+        gradientBox.style.backgroundPosition = '50% 50%';
+    });
+}
+
+//шифрование
     async function saveDecryptedKeyToLocal(decryptedCryptoKey, storageKeyName = 'private') {
     // 1. Экспортируем рабочий CryptoKey в формат JWK (JSON Web Key)
     const jwkKey = await window.crypto.subtle.exportKey("jwk", decryptedCryptoKey);

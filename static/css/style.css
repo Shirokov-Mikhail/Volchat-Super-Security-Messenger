@@ -254,13 +254,19 @@ label {
     height: 70%;
 }
 .gradient-image {
-    background: radial-gradient(circle, #252675 0%, transparent 60%);
     width: 38%;
     margin-right: 10%;
     height: 800px;
+
+    background-image: radial-gradient(circle, white 0%, transparent 40%);
+    background-size: 150% 150%;
+    background-position: 50% 50%;
+
+    /* Плавность, чтобы свет не дергался за мышью слишком резко */
+    transition: background-position 0.2s ease-out;
 }
 .gradient-back {
-    background: radial-gradient(#252675 0%, transparent 70%);
+    background: radial-gradient(white 0%, transparent 50%);
 }
 
 /* =========================================
@@ -338,6 +344,7 @@ nav {
     height: 90vh;
     margin: 10px;
     overflow: hidden;
+
     position: relative; /* Чтобы панель поиска не улетала за края */
 }
 .chats-panel {
@@ -346,12 +353,13 @@ nav {
     width: 20%;
     height: 100%;
     overflow-y: auto;
+    /*border-right: 1.5px solid var(--main-font-color);*/
 }
 .right-panel {
     width: 70%;
     display: flex;
     flex-direction: column;
-    margin-left: 1%;
+    /*margin-left: 1%;*/
     margin-right: 9%;
     filter: blur(10px);
     height: 100%;
@@ -388,7 +396,6 @@ nav {
     align-items: center;
     margin: 10px;
     margin-top: 1px;
-
     padding: 0;
     border: 1px;
     cursor: pointer;
@@ -482,7 +489,7 @@ nav {
     margin-left: 0;
     align-items: center;
     justify-content: left;
-    background: linear-gradient(to bottom, #101010 90%, transparent);
+    border-bottom: 1.5px solid var(--main-font-color);
 
 }
 .chat-title-panel img {
