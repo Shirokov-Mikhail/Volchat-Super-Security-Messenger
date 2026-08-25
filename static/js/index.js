@@ -458,10 +458,43 @@ async function loadToken() {
     console.log(response)
 }
 
-// socket.on('need-new-access-token', () => {
-//
-//
-// })
+socket.on('update-token',async () => {
+    try {
+        console.log("Обновление токена...");
+        const response = await fetch('http://127.0.0.1:5000/refresh', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                'user_id': user_id,
+                'login': username_local,
+                'token': jwt_token,
+                'type': 'access'
+            })
+        });
+
+        const result = await response.json();
+        console.log("Ответ сервера:", result);
+
+        if (response.ok && result.access_token) {
+            jwt_token = result.access_token;
+
+            localStorage.setItem('jwt_token', jwt_token);
+            console.log("Токен успешно сохранен:", jwt_token);
+            socket.emit('auth', {
+                'login': username_local,
+                'token': jwt_token
+            })
+        } else {
+            console.error("Ошибка входа:", result);
+        }
+
+    } catch (error) {
+        console.error("Что-то пошло не так (ошибка криптографии или сети):", error);
+    }
+
+})
 socket.on('need-access-token', async function (data) {
     if (data['status'] === 'success') {
         email_auth.style.borderColor = 'black';

@@ -18,14 +18,13 @@ app.config["MYSQL_PASSWORD"] = ""
 app.config["MYSQL_DB"] = "volchat"
 app.config['SECRET_KEY'] = "Volchatus45Naperdatus7211"
 # Файл .env на вашем сервере
-ACCESS_SECRET="ваша_постоянная_строка_которую_знает_только_сервер"
-REFRESH_SECRET="другая_постоянная_строка_которую_знает_только_сервер"
-
+ACCESS_SECRET = "ваша_постоянная_строка_которую_знает_только_сервер"
+REFRESH_SECRET = "другая_постоянная_строка_которую_знает_только_сервер"
 
 app.config['SESSION_COOKIE_SECURE'] = False  # отключить при https
 
-app.config['SESSION_COOKIE_HTTPONLY'] = False #True при https
-app.config['SESSION_COOKIE_SAMESITE'] = 'None' # Или 'Lax', если фронт и бек на одном домене
+app.config['SESSION_COOKIE_HTTPONLY'] = False  # True при https
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Или 'Lax', если фронт и бек на одном домене
 SECRET_KEY = "Volchatus45Naperdatus7211"
 app.secret_key = 'Volchatus45Naperdatus7211'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
@@ -42,6 +41,7 @@ r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 def index():
     return render_template('index.html')
 
+
 @socketio.on('connect')
 def handle_connect(auth):
     # Socket.IO автоматически передает данные из поля auth клиента
@@ -49,7 +49,6 @@ def handle_connect(auth):
     token_menager = TokenManager(mysql)
     if not token:
         print("Попытка подключения без токена")
-        emit('need-new-access-token', {})
         return
 
     try:
@@ -64,7 +63,10 @@ def handle_connect(auth):
 
     except ValueError as e:
         print(e)
+        if str(e) == "Срок действия access-токена истек":
+            emit('update-token', {'status': 'success'})
         return
+
 
 @socketio.on('start-session')
 def start_session(data):
@@ -117,7 +119,7 @@ def user_load_messages(data):
                                        'private-key': db.key,
                                        'public-key': db.public,
                                        'nonce': nonce
-                                       ,'iv': db.message
+                , 'iv': db.message
                                        })
         elif not db.check_token(data['token'], 'access')[0]:
             emit('need-new-access-token', {'status': 'success'})
@@ -150,13 +152,13 @@ def load_chat(data):
             join_room(room_name)
             friend_id = db.friend_id
             emit('load-chat', {'status': 'success',
-                           'out': list(out),
-                           'into': list(into),
-                           'all': list(all),
-                           'friend_login': friend_login,
-                           'friend_id': friend_id,
-                            'friend_public': friend_public
-                           })
+                               'out': list(out),
+                               'into': list(into),
+                               'all': list(all),
+                               'friend_login': friend_login,
+                               'friend_id': friend_id,
+                               'friend_public': friend_public
+                               })
             return
         else:
             emit('need-new-access-token', {'status': 'success'})
@@ -183,6 +185,7 @@ def load_chat(data):
                            'friend_id': 'friend_id'
                            })
 
+
 @socketio.on('registration-check')
 def register(data):
     login = data['login']
@@ -207,7 +210,6 @@ def registration(data):
         id = db.select_id(login)
         nonce = generate_nonce()
 
-        print('мы в обычной регистрации и регнулись в бд')
         r.set(name=f"nonce:{login}", value=nonce, ex=60)
         emit('need-access-token', {'status': 'success',
                                    'login': login,
@@ -219,10 +221,9 @@ def registration(data):
                                    })
 
         emit('registration', {'status': 'success',
-                                       'id': id})
+                              'id': id})
     else:
         emit('registration', {'status': 'error'})
-
 
 
 @socketio.on('send-message')
@@ -237,7 +238,7 @@ def sending_messages(data):
         emit('new-message', {'status': 'success',
                              'author_id': user_id,
                              'chat_id': chat_id
-                             ,'text': message,
+            , 'text': message,
                              'iv': iv}, to=room_name)
         # emit('load-chat', {'status': 'success',
         #                    'out': list(out),
@@ -250,6 +251,7 @@ def sending_messages(data):
         emit('need-new-access-token', {'status': 'success'})
     else:
         emit('load-chat', {'status': 'error'})
+
 
 @socketio.on('need-members')
 def need_members(data):
@@ -265,6 +267,7 @@ def need_members(data):
         if db:
             db.close()
 
+
 @socketio.on('make_new_chat')
 def make_new_chat(data):
     try:
@@ -278,11 +281,11 @@ def make_new_chat(data):
             users_id = owner_id + users_id
             chat_id, chat_name = db.new_chat(str(data['name']), users_id, type=chat_type)
             if chat_name:
-                emit('make_new_chat', {'status': 'success',  'chat_id': chat_id,
-                                   'chat_name': chat_name})
+                emit('make_new_chat', {'status': 'success', 'chat_id': chat_id,
+                                       'chat_name': chat_name})
                 load_chat({
-                'chat_id': chat_id,
-                'user_id': owner_id})
+                    'chat_id': chat_id,
+                    'user_id': owner_id})
                 return
             emit('make_new_chat', {'status': 'unsuccess'})
         else:
@@ -292,6 +295,7 @@ def make_new_chat(data):
 
     except Exception as e:
         print('make_new_chat error:', e)
+
 
 @socketio.on('verify_signature')
 def handle_verify_signature(data):
@@ -316,7 +320,6 @@ def handle_verify_signature(data):
 
 @app.route('/login', methods=['POST'])
 def login():
-
     data = request.json
     login = data.get('login')
     signature = data.get('sig')
@@ -334,22 +337,22 @@ def login():
         emit('auth', {'success': False, 'error': 'Nonce истек или не запрашивался'})
         return None
     if verify_nonce_signature(saved_nonce, signature, public_key):
-        print('можем вернуть')
+
         token_manager = TokenManager(mysql)
         access_token, refresh_token = token_manager.create_tokens(data['user_id'])
         token_manager.close()
         response = make_response(jsonify({
-          "access_token": access_token
+            "access_token": access_token
         }))
 
         response.set_cookie(
             key='refresh_token',
             value=refresh_token,
-            httponly=False,       # КРИТИЧНО: Запрещает JavaScript читать куку (защита от XSS-атак)
-            secure=False,         # КРИТИЧНО: Кука передается только по HTTPS (на localhost можно поставить False)
-            samesite='Strict',   # КРИТИЧНО: Защита от CSRF-атак (кука не уйдет, если запрос сделан с чужого сайта)
-            max_age=30 * 24 * 60 * 60, # Время жизни куки в браузере (в секундах, например 30 дней)
-            path='/refresh'      # СУПЕР-ОПТИМИЗАЦИЯ: Браузер будет прикреплять эту куку ТОЛЬКО к запросам на URL /refresh
+            httponly=False,  # КРИТИЧНО: Запрещает JavaScript читать куку (защита от XSS-атак)
+            secure=False,  # КРИТИЧНО: Кука передается только по HTTPS (на localhost можно поставить False)
+            samesite='Strict',  # КРИТИЧНО: Защита от CSRF-атак (кука не уйдет, если запрос сделан с чужого сайта)
+            max_age=30 * 24 * 60 * 60,  # Время жизни куки в браузере (в секундах, например 30 дней)
+            path='/refresh'  # СУПЕР-ОПТИМИЗАЦИЯ: Браузер будет прикреплять эту куку ТОЛЬКО к запросам на URL /refresh
         )
         # user_load_messages({'login': login, 'token': access_token})
         return response
@@ -358,18 +361,21 @@ def login():
 
 # Пример использования при обновлении:
 @app.route('/refresh', methods=['POST'])
-def refresh(data):
-    db_checker = DbTokenAccessCheck(mysql)
-    token_manager = TokenManager(db_checker)
+def refresh():
+    data = request.json
+    token_manager = TokenManager(mysql)
+    login = data.get('login')
+    old_access = data.get('token')
+    user_id = data.get('user_id')
     old_refresh = request.cookies.get('refresh_token')
-    old_access = data['access']
     if not old_refresh:
         return jsonify({"error": "Refresh-токен отсутствует"}), 401
 
     if not old_access:
         return jsonify({"error": "Access-токен не предоставлен"}), 401
     try:
-        if data['type'] == 'access' and token_manager.check_token(old_access, 'access')[0]:
+        if data['type'] == 'access' and \
+                token_manager.check_token(old_refresh, 'refresh')[0]:
             new_access = token_manager.refresh_access_token(old_refresh)
             token_manager.close()
             return jsonify({"access_token": new_access}), 200
@@ -392,8 +398,7 @@ def refresh(data):
     except ValueError as e:
         disconnect()
         return jsonify({"error": str(e)}), 401
-    finally:
-        return jsonify({"error": 'Fatality error'}), 404
+
 
 # @app.route('/disconnect', methods=['POST'])
 # def delete_tokens(data):

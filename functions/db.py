@@ -214,7 +214,7 @@ class DataBaseLoader:
             self.cur.execute(f'''SELECT `content`, `author_id`, `iv` FROM `messages` WHERE `chat_id`='{chat_id}';''')
 
             all = [(i[0], True if int(i[1]) == user_id else False, i[2]) for i in self.cur.fetchall()]
-            print(all)
+
             return out, into, all
         except Exception as e:
             print('load-messages', e)
@@ -238,7 +238,6 @@ class DataBaseLoader:
 
                 self.cur.execute(f''' SELECT `Login`, `public_key` FROM `users` WHERE `id`='{self.friend_id}';''')
                 friend_login, public_key = self.cur.fetchone()
-                print('load_Friends_Info', friend_login, public_key)
                 return friend_login, public_key
             else:
                 raise ValueError('User not found')
@@ -482,13 +481,12 @@ class TokenManager(DbTokenAccessCheck):
         try:
 
             payload = self.verify_token(refresh_token_string, expected_type='refresh')
+
             user_id = payload.get('user_id')
-            return self._generate_access(user_id)
+            jwt = self._generate_access(user_id)
+            return str(jwt)
         except ValueError as e:
             raise ValueError(f"Block users")
-
-        finally:
-            raise Exception("Fatality server error")
 
     def rotate_tokens(self, refresh_token_string: str):
         try:
