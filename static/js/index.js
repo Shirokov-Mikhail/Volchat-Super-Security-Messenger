@@ -1,15 +1,35 @@
+import {
+    saveDecryptedKeyToLocal,
+    generateKeyPair,
+    extractKeys,
+    decryptPrivateKey,
+    deriveSharedAESKey,
+    importFriendPublicKey,
+    encryptChatMessage,
+    decryptChatMessage,
+    loadDecryptedKeyFromLocal,
+    encryptPrivateKey
+} from './crypto.js';
+import {convertKeyForSigning, arrayBufferToBase64, generateSignature} from './ECDSA.js';
+// import {authorization, registrations} from "./registartion&auth";
+// import {start_chat_session} from "./chat-session"
+
+window.openChat = openChat;
+window.newChat = newChat;
+window.closeNewChat = closeNewChat;
+window.new_chat_button_active = new_chat_button_active;
 // pages
 const start_page = document.getElementById("start-page");
 const chat_page = document.getElementById("chat-page");
 const footer = document.getElementById("footer");
 
-// x-bnt and form in start page
-const register_button = document.getElementById("register-btn");
-const register_form = document.getElementById("register");
-const x_register = document.getElementById("close-register");
-const auth_btn = document.getElementById("auth-btn");
-const auth_form = document.getElementById("autorisi");
-const x_close = document.getElementById("close_auth");
+// // x-bnt and form in start page
+// const register_button = document.getElementById("register-btn");
+// const register_form = document.getElementById("register");
+// const x_register = document.getElementById("close-register");
+// const auth_btn = document.getElementById("auth-btn");
+// const auth_form = document.getElementById("autorisi");
+// const x_close = document.getElementById("close_auth");
 
 // основные элементы главной страницы
 const contacts = document.getElementById("contacts");
@@ -39,20 +59,30 @@ const password_repeat_error = document.getElementById("password-error");
 // тут элементы нового чата
 const new_chat_panel = document.getElementById("new-chat-panel");
 
+const chat_panel_additionl_elements = {
+    'start':'<div class="chat-panel-element center">\n' +
+        // '<button class="close button input-type-button" id="setings"><img src="../../static/image/setting-3.png" class="message-img"  class="message-img" style="width: 30px !important; height: 30px !important;"></button>\n' +
+        '<h2 class="title">Чаты</h2>\n' +
+        '    </div>',
+    'end': `<button class="chat-panel-element chat-panel-hover center to-bottom" id="new-chat-btn" onclick="newChat()">
+      <p class="text medium">Новый чат +</p>
+    </button>`
+}
+
 // подгрузка чатов сервер сам поймет что сессии нет
-let username_local = localStorage.getItem('username') || undefined; // имя пользователя
-let user_id = localStorage.getItem('user_id') || undefined;// id пользователя
-let chats = [];// список чатов чтобы не приходилось заново подгружать
-let publickey = localStorage.getItem('user_key') || undefined; // публичный ключ пользователя
-let current_chat_id = -1;// текущий id чата все id больше 0 изначально чтобы не закртыть существующую комнату -1
-let privatekey = undefined;// приватный ключ пользователя
-let companion_key;// публичный ключ собеседника
-let helman_key; // симетричный ключ который будет сгенерирован из публичного и приватного
-let new_chat_activity = false;// если идет создание нового чата то true
-let users_selected = [];// выбранные пользователи при создании нового чат
-let famous_users = [] // чтобы не подгружать заново контакты
-let jwt_token = localStorage.getItem('jwt_token') || '';// jwt ТОКЕН потом localStorage.getItem('jwt_token');
-let iv = localStorage.getItem('iv') || undefined; // вектор инициализации
+export let username_local = localStorage.getItem('username') || undefined; // имя пользователя
+export let user_id = localStorage.getItem('user_id') || undefined;// id пользователя
+export let chats = [];// список чатов чтобы не приходилось заново подгружать
+export let publickey = localStorage.getItem('user_key') || undefined; // публичный ключ пользователя
+export let current_chat_id = -1;// текущий id чата все id больше 0 изначально чтобы не закртыть существующую комнату -1
+export let privatekey = undefined;// приватный ключ пользователя
+export let companion_key;// публичный ключ собеседника
+export let helman_key; // симетричный ключ который будет сгенерирован из публичного и приватного
+export let new_chat_activity = false;// если идет создание нового чата то true
+export let users_selected = [];// выбранные пользователи при создании нового чат
+export let famous_users = [] // чтобы не подгружать заново контакты
+export let jwt_token = localStorage.getItem('jwt_token') || '';// jwt ТОКЕН потом localStorage.getItem('jwt_token');
+export let iv = localStorage.getItem('iv') || undefined; // вектор инициализации
 // а
 console.log(localStorage)
 const socket = io("http://127.0.0.1:5000", {auth: {token: jwt_token}, login: username_local});
@@ -84,7 +114,7 @@ socket.on('start-session', function (data) {
 
 
 //проверка для авторизации
-function auth() {
+export function auth() {
     if (email_auth.value !== '' && password_auth.value !== '') {
         socket.emit('auth', {
             'token': jwt_token,
@@ -128,7 +158,7 @@ socket.on('auth', async function (data) {
 })
 
 // проверка регистрации
-function register() {
+export function register() {
     if (login.value !== '' && password_1.value !== '' && password_2.value === password_1.value && username_local !== '' && password_1.value.length >= 8) {
         password_1.style.borderColor = 'black';
         password_2.style.borderColor = 'black';
@@ -204,7 +234,7 @@ socket.on('registration', function (data) {
 })
 
 // запрос на сервер для получения сообщений
-function loadChat(chat_id) {
+export function loadChat(chat_id) {
     console.log(current_chat_id)
     socket.emit('load-chat', {
         'chat_id': chat_id,
@@ -264,7 +294,7 @@ socket.on('load-chat', async function (data) {
     }
 })
 
-async function send_messages() {
+export async function send_messages() {
     if (send_message.value !== '' && current_chat_id !== -1) {
         // шифруем сообщение
 
@@ -284,22 +314,16 @@ async function send_messages() {
 
 // все что ниже нужно переписать
 // как оказалось не трогай то что работает хорошо
-function openChat(all_id, id) {//id чата, id уже не помню чего;
+export function openChat(all_id, id) {//id чата, id уже не помню чего;
 
     start_panel.style.display = "none";
     main_chat_panel.style.filter = "none";
     main_chat_panel.style.pointerEvents = 'auto'
     main_chat_panel.style.display = "block";
     contacts.textContent = ''
-    contacts.innerHTML = '<div class="chat-panel-element center">\n' +
-        // ' <button class="close button input-type-button" id="setings"><img src="../../static/image/setting-3.png"  class="message-img" class="message-img" style="width: 30px !important; height: 30px !important;"></button>\n'+
-        '    <h2 class="title">Чаты</h2>\n' +
-        '    </div>'
-
+    contacts.innerHTML = chat_panel_additionl_elements.start
     for (let key in chats) {
-
         if (Number(key) === Number(id)) {
-
             loadChat(Number(all_id));
             contacts.innerHTML += `<button onclick="openChat(${chats[key][0]}, ${key})" class="chat-panel-element active-chat">
 <img class="message-img user-img" src="../../static/image/logo.png" alt="Волчат">
@@ -310,15 +334,13 @@ function openChat(all_id, id) {//id чата, id уже не помню чего
       <p class="text medium">${chats[key][1]}</p> </button>`;
         }
     }
-    contacts.innerHTML += `<button class="chat-panel-element chat-panel-hover center to-bottom" id="new-chat-btn" onclick="newChat()">
-      <p class="text medium">Новый чат +</p>
-    </button>`
+    contacts.innerHTML += chat_panel_additionl_elements.end
 
 }
 
 // до сюда примерно Ну уже не буду
 
-function closeNewChat() {
+export function closeNewChat() {
     new_chat_panel.style.display = "none";
     new_chat_activity = false
     users_selected = []
@@ -326,8 +348,16 @@ function closeNewChat() {
     username.textContent = ''
     openChat(-1, -1)
 }
-
-function newChat() {
+export function makeNewChat(){
+    console.log('user', user_id)
+    socket.emit('make_new_chat', {
+        'users': users_selected,
+        'user_id': Number(user_id),
+        'name': send_message.value,
+        'token': jwt_token
+    })
+}
+export function newChat() {
 
     new_chat_panel.style.display = "flex"
     start_panel.style.display = "none"
@@ -337,9 +367,10 @@ function newChat() {
     send_message.value = 'Твой новый чат'
     new_chat_activity = true
     socket.emit('need-members', {})
+
 }
 
-function updateNewChatContacts(data) {
+export function updateNewChatContacts(data) {
     new_chat_panel.innerHTML = ''
     famous_users = data
     let htmlContent = `
@@ -580,64 +611,6 @@ socket.on('need-access-token', async function (data) {
     }
 });
 
-// Конвертирует ключ чата (ECDH) в ключ для подписи (ECDSA)
-async function convertKeyForSigning(ecdhPrivateKey) {
-    // 1. Выгружаем сырые байты приватного ключа
-    const rawBytes = await window.crypto.subtle.exportKey("pkcs8", ecdhPrivateKey);
-
-    // 2. Импортируем те же байты, но уже с алгоритмом ECDSA и правом на подпись
-    return await window.crypto.subtle.importKey(
-        "pkcs8",
-        rawBytes,
-        {name: "ECDSA", namedCurve: "P-256"},
-        true,
-        ["sign"]
-    );
-}
-
-// Подписи
-// Вспомогательная функция: переводит сырые байты (ArrayBuffer) в строку Base64
-function arrayBufferToBase64(buffer) {
-    let binary = '';
-    const bytes = new Uint8Array(buffer);
-    const len = bytes.byteLength;
-    for (let i = 0; i < len; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
-    return window.btoa(binary);
-}
-
-/**
- * Создает криптографическую подпись ECDSA для любой строки
- * * @param {string} dataString - Исходная строка, которую нужно подписать (например, nonce)
- * @param {CryptoKey} privateKey - Объект приватного ключа пользователя
- * @returns {Promise<string>} - Готовая подпись в формате Base64
- */
-async function generateSignature(dataString, privateKey) {
-    try {
-        // 1. Кодируем текст в сырые байты, так как криптография работает только с байтами
-        const encoder = new TextEncoder();
-        const dataBytes = encoder.encode(dataString);
-
-        // 2. Ставим подпись с помощью встроенного движка браузера
-        const signatureBuffer = await window.crypto.subtle.sign(
-            {
-                name: "ECDSA",
-                hash: {name: "SHA-256"},
-            },
-            privateKey,
-            dataBytes
-        );
-
-        // 3. Переводим результат в Base64 для удобной передачи по сети
-        return arrayBufferToBase64(signatureBuffer);
-
-    } catch (error) {
-        console.error("[Криптография] Ошибка генерации подписи:", error);
-        throw error;
-    }
-}
-
 // кнопки
 
 document.addEventListener("keydown", (event) => {
@@ -662,51 +635,7 @@ document.addEventListener("keydown", (event) => {
             break
     }
 })
-send_button.addEventListener('click', (event) => {
-    if (!new_chat_activity) {
-        send_messages()
-    } else {
-        console.log('user', user_id)
-        socket.emit('make_new_chat', {
-            'users': users_selected,
-            'user_id': Number(user_id),
-            'name': send_message.value,
-            'token': jwt_token
-        })
 
-        closeNewChat()
-
-    }
-})
-
-
-submit_auth.forEach((button) => {
-    button.addEventListener('click', (event) => {
-        auth();
-    })
-})
-register_btn.forEach((button) => {
-    button.addEventListener('click', (event) => {
-        register();
-    })
-})
-
-register_button.addEventListener("click", () => {
-    register_form.style.display = "flex";
-})
-x_register.addEventListener("click", () => {
-    register_form.style.display = "none";
-    auth_btn.style.display = "block";
-})
-auth_btn.addEventListener("click", () => {
-
-    auth_form.style.display = "flex";
-})
-x_close.addEventListener("click", () => {
-    auth_form.style.display = "none";
-
-
-})
 send_message.addEventListener('input', (event) => {
     if (new_chat_activity) {
         username.textContent = send_message.value;
@@ -731,261 +660,3 @@ if (gradientBox) {
     });
 }
 
-//шифрование
-async function saveDecryptedKeyToLocal(decryptedCryptoKey, storageKeyName = 'private') {
-    // 1. Экспортируем рабочий CryptoKey в формат JWK (JSON Web Key)
-    const jwkKey = await window.crypto.subtle.exportKey("jwk", decryptedCryptoKey);
-
-    // 2. Превращаем JSON-объект в строку и кладем в localStorage
-    localStorage.setItem(storageKeyName, JSON.stringify(jwkKey));
-
-    console.log("Дешифрованный ключ успешно сохранен в localStorage!");
-    return jwkKey
-}
-
-async function loadDecryptedKeyFromLocal(storageKeyName = 'private') {
-    // 1. Достаем строку из localStorage
-    const storedKeyString = localStorage.getItem(storageKeyName);
-
-    if (!storedKeyString) {
-        return null; // Если ключа нет (например, юзер вышел)
-    }
-
-    // 2. Превращаем строку обратно в объект JWK
-    const jwkKey = JSON.parse(storedKeyString);
-
-    // 3. Импортируем JWK обратно в работоспособный объект CryptoKey
-    // Используем строго те же параметры, что и в твоем коде при генерации!
-    const workingKey = await window.crypto.subtle.importKey(
-        "jwk",
-        jwkKey,
-        {
-            name: "ECDH",
-            namedCurve: "P-256"
-        },
-        true, // Разрешаем извлечение
-        ["deriveKey", "deriveBits"] // Права для генерации Хеллмана
-    );
-
-    console.log("Ключ успешно извлечен и готов к работе!");
-    return workingKey;
-}
-
-/* 1. Генерация ключей шифрования пользователя */
-async function generateKeyPair() {
-    const keyPair = await window.crypto.subtle.generateKey(
-        {
-            name: "ECDH",
-            namedCurve: "P-256"
-        },
-        true, // Разрешаем извлечение
-        ["deriveKey", "deriveBits"]
-    );
-    console.log("Пара ключей (ECDH) успешно сгенерирована!");
-    return keyPair;
-}
-
-/* 2. Извлечение ключей (с сохранением оригиналов для Хеллмана) */
-async function extractKeys(keyPair) {
-    // Публичный ключ в JWK для базы данных
-    const publicKeyJWK = await window.crypto.subtle.exportKey("jwk", keyPair.publicKey);
-    const publicKeyString = JSON.stringify(publicKeyJWK);
-    // Приватный ключ в PKCS8 для шифрования паролем
-    const privateKeyBytes = await window.crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
-
-    console.log("Ключи успешно извлечены во всех форматах!");
-
-    return {
-        publicKeyJWK: publicKeyString,           // Отправляем на сервер (открыто)
-        privateKeyBytes: privateKeyBytes,     // Шифруем паролем
-        originalPublicKey: keyPair.publicKey, // Оставляем в памяти для Хеллмана
-        originalPrivateKey: keyPair.privateKey // Оставляем в памяти для Хеллмана
-    };
-}
-
-/* Вспомогательная функция: ArrayBuffer -> Base64 */
-function bufferToBase64(buffer) {
-    return btoa(String.fromCharCode.apply(null, new Uint8Array(buffer)));
-}
-
-/* Вспомогательная функция: Base64 -> Uint8Array */
-function base64ToUint8Array(base64) {
-    const binaryString = atob(base64);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-    }
-    return bytes;
-}
-
-/* 3. Шифрование сырых байт приватного ключа паролем */
-
-// Обрати внимание: теперь функция принимает уже извлеченные privateKeyBytes
-async function encryptPrivateKey(privateKeyBytes, userId, password) {
-    const encoder = new TextEncoder();
-
-    const passwordKeyMaterial = await window.crypto.subtle.importKey(
-        "raw",
-        encoder.encode(password),
-        {name: "PBKDF2"},
-        false,
-        ["deriveKey"]
-    );
-
-    const salt = encoder.encode(userId.toString());
-
-    const aesKey = await window.crypto.subtle.deriveKey(
-        {
-            name: "PBKDF2",
-            salt: salt,
-            iterations: 100000,
-            hash: "SHA-256"
-        },
-        passwordKeyMaterial,
-        {name: "AES-GCM", length: 256},
-        false,
-        ["encrypt"]
-    );
-
-    const iv = window.crypto.getRandomValues(new Uint8Array(12));
-    const encryptedPrivateKeyBuffer = await window.crypto.subtle.encrypt(
-        {name: "AES-GCM", iv: iv},
-        aesKey,
-        privateKeyBytes
-    );
-
-    return {
-        encryptedKeyBase64: bufferToBase64(encryptedPrivateKeyBuffer),
-        ivBase64: bufferToBase64(iv)
-    };
-}
-
-/* 4. Расшифровка приватного ключа (при логине) */
-async function decryptPrivateKey(encryptedKeyBase64, ivBase64, userId, password) {
-    const encoder = new TextEncoder();
-
-    const passwordKeyMaterial = await window.crypto.subtle.importKey(
-        "raw",
-        encoder.encode(password),
-        {name: "PBKDF2"},
-        false,
-        ["deriveKey"]
-    );
-
-    const salt = encoder.encode(userId.toString());
-
-    const aesKey = await window.crypto.subtle.deriveKey(
-        {
-            name: "PBKDF2",
-            salt: salt,
-            iterations: 100000,
-            hash: "SHA-256"
-        },
-        passwordKeyMaterial,
-        {name: "AES-GCM", length: 256},
-        false,
-        ["decrypt"]
-    );
-
-    const encryptedBytes = base64ToUint8Array(encryptedKeyBase64);
-    const iv = base64ToUint8Array(ivBase64);
-
-    const decryptedPrivateKeyBuffer = await window.crypto.subtle.decrypt(
-        {name: "AES-GCM", iv: iv},
-        aesKey,
-        encryptedBytes
-    );
-
-    // Возвращаем полноценный CryptoKey для Хеллмана
-    return await window.crypto.subtle.importKey(
-        "pkcs8",
-        decryptedPrivateKeyBuffer,
-        {name: "ECDH", namedCurve: "P-256"},
-        true,
-        ["deriveKey", "deriveBits"]
-    );
-}
-
-/* 5. Генерация общего секрета Хеллмана */
-async function deriveSharedAESKey(myPrivateKey, friendPublicKey) {
-    return await window.crypto.subtle.deriveKey(
-        {
-            name: "ECDH",
-            public: friendPublicKey
-        },
-        myPrivateKey,
-        {
-            name: "AES-GCM",
-            length: 256
-        },
-        false,
-        ["encrypt", "decrypt"]
-    );
-}
-
-/* 6. Импорт чужого публичного ключа (с сервера в формат CryptoKey) */
-async function importFriendPublicKey(jwkKey) {
-    return await window.crypto.subtle.importKey(
-        "jwk",
-        jwkKey,
-        {name: "ECDH", namedCurve: "P-256"},
-        true,
-        []
-    );
-}
-
-/**
- * Шифрование сообщения перед отправкой
- * @param {CryptoKey} sharedAesKey - Симметричный ключ AES-GCM (сгенерированный Хеллманом)
- * @param {string} textMessage - Исходный текст сообщения от пользователя
- * @returns {Promise<Object>} Зашифрованный текст и вектор инициализации в Base64
- */
-async function encryptChatMessage(sharedAesKey, textMessage) {
-    const encoder = new TextEncoder();
-    const encodedText = encoder.encode(textMessage);
-
-    // Вектор инициализации (IV) обязательно генерируется заново для КАЖДОГО сообщения[cite: 1, 4]
-    const iv = window.crypto.getRandomValues(new Uint8Array(12));
-
-    // Шифруем данные симметричным ключом[cite: 1, 4]
-    const cipherTextBuffer = await window.crypto.subtle.encrypt(
-        {name: "AES-GCM", iv: iv},
-        sharedAesKey,
-        encodedText
-    );
-
-    return {
-        cipherTextBase64: bufferToBase64(cipherTextBuffer),
-        ivBase64: bufferToBase64(iv) // Открыто передаем вектор собеседнику вместе с сообщением[cite: 1, 4]
-    };
-}
-
-/**
- * Расшифровка входящего сообщения
- * @param {CryptoKey} sharedAesKey - Тот же общий симметричный ключ чата
- * @param {string} cipherTextBase64 - Зашифрованный текст из базы данных/сокетов
- * @param {string} ivBase64 - Вектор инициализации, пришедший вместе с сообщением
- * @returns {Promise<string|null>} Расшифрованный текст или null при ошибке
- */
-async function decryptChatMessage(sharedAesKey, cipherTextBase64, ivBase64) {
-    try {
-        // Подготавливаем бинарные данные для алгоритма[cite: 1, 4]
-        const cipherTextBuffer = base64ToUint8Array(cipherTextBase64);
-        const iv = base64ToUint8Array(ivBase64);
-
-        // Расшифровываем, используя ТОТ ЖЕ вектор, с которым шифровалось сообщение[cite: 1, 4]
-        const decryptedBuffer = await window.crypto.subtle.decrypt(
-            {name: "AES-GCM", iv: iv},
-            sharedAesKey,
-            cipherTextBuffer
-        );
-
-        // Декодируем байты обратно в читаемую строку[cite: 1, 4]
-        const decoder = new TextDecoder();
-        return decoder.decode(decryptedBuffer);
-
-    } catch (error) {
-        console.error("Ошибка расшифровки сообщения! Данные повреждены или неверный ключ:", error);
-        return null;
-    }
-}
