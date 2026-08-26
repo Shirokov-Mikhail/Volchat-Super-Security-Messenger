@@ -65,16 +65,19 @@ socket.on('start-session', function (data) {
 
         chat_page.style.display = "flex";
         contacts.textContent = ''
-        contacts.innerHTML = '<div class="chat-panel-element">\n' +
-            '      <h2 class="title">Чаты</h2>\n' +
+        contacts.innerHTML = '<div class="chat-panel-element center">\n' +
+            // '<button class="close button input-type-button" id="setings"><img src="../../static/image/setting-3.png" class="message-img"  class="message-img" style="width: 30px !important; height: 30px !important;"></button>\n' +
+            '<h2 class="title">Чаты</h2>\n' +
             '    </div>'
         for (let key in data['clients']) {
             chats.push(data['clients'][key]);
             contacts.innerHTML += `<button onclick="openChat(${data['clients'][key][0]}, ${key})" class="chat-panel-element chat-panel-hover">
-      <p class="text">${data['clients'][key][1]}</p> </button>`;
+<img class="message-img user-img" src="../../static/image/logo.png" alt="Волчат">
+      
+      <p class="text medium">${data['clients'][key][1]}</p> </button>`;
         }
-        contacts.innerHTML += `<button class="chat-panel-element chat-panel-hover" id="new-chat-btn" onclick="newChat()">
-      <p class="text">Новый чат +</p>
+        contacts.innerHTML += `<button class="chat-panel-element chat-panel-hover center to-bottom" id="new-chat-btn" onclick="newChat()">
+      <p class="text medium">Новый чат +</p>
     </button>`
     }
 });
@@ -104,8 +107,8 @@ socket.on('auth', async function (data) {
         user_id = data['id']
         if (privatekey === undefined) {
             privatekey = await loadDecryptedKeyFromLocal()
-        }else {
-                console.log(privatekey);
+        } else {
+            console.log(privatekey);
         }
         iv = data['iv']
         localStorage.setItem('iv', iv);
@@ -234,7 +237,7 @@ socket.on('load-chat', async function (data) {
                 // Свое сообщение (отправленное) — меняем left на right
                 htmlContent += `<div class="message right">
     <img class="message-img" src="../../static/image/logo.png" alt="Волчат">
-    <div class="message-content">
+    <div class="message-content right">
         <p class="text">${message}</p>
         <p class="text time">00:00</p>
     </div>
@@ -243,7 +246,7 @@ socket.on('load-chat', async function (data) {
                 // Чужое сообщение (полученное) — меняем right на left
                 htmlContent += `<div class="message left">
     <img class="message-img" src="../../static/image/logo.png" alt="Волчат">
-    <div class="message-content">
+    <div class="message-content left">
         <p class="text">${message}</p>
         <p class="text time">00:00</p>
     </div>
@@ -288,8 +291,9 @@ function openChat(all_id, id) {//id чата, id уже не помню чего
     main_chat_panel.style.pointerEvents = 'auto'
     main_chat_panel.style.display = "block";
     contacts.textContent = ''
-    contacts.innerHTML = '<div class="chat-panel-element">\n' +
-        '      <h2 class="title">Чаты</h2>\n' +
+    contacts.innerHTML = '<div class="chat-panel-element center">\n' +
+        // ' <button class="close button input-type-button" id="setings"><img src="../../static/image/setting-3.png"  class="message-img" class="message-img" style="width: 30px !important; height: 30px !important;"></button>\n'+
+        '    <h2 class="title">Чаты</h2>\n' +
         '    </div>'
 
     for (let key in chats) {
@@ -298,14 +302,16 @@ function openChat(all_id, id) {//id чата, id уже не помню чего
 
             loadChat(Number(all_id));
             contacts.innerHTML += `<button onclick="openChat(${chats[key][0]}, ${key})" class="chat-panel-element active-chat">
-      <p class="text">${chats[key][1]}</p> </button>`;
+<img class="message-img user-img" src="../../static/image/logo.png" alt="Волчат">
+      <p class="text medium">${chats[key][1]}</p> </button>`;
         } else {
             contacts.innerHTML += `<button onclick="openChat(${chats[key][0]}, ${key})" class="chat-panel-element chat-panel-hover">
-      <p class="text">${chats[key][1]}</p> </button>`;
+<img class="message-img user-img" src="../../static/image/logo.png" alt="Волчат">
+      <p class="text medium">${chats[key][1]}</p> </button>`;
         }
     }
-    contacts.innerHTML += `<button class="chat-panel-element chat-panel-hover" id="new-chat-btn" onclick="newChat()">
-      <p class="text">Новый чат +</p>
+    contacts.innerHTML += `<button class="chat-panel-element chat-panel-hover center to-bottom" id="new-chat-btn" onclick="newChat()">
+      <p class="text medium">Новый чат +</p>
     </button>`
 
 }
@@ -416,7 +422,7 @@ socket.on('new-message', async function (data) {
         let text = await decryptChatMessage(helman_key, data['text'], data['iv'])
         if (data['author_id'] === user_id) {
             const htmlContent = `<div class="message right">
-            <img class="message-img" src="../../static/image/logo.png" alt="Волчат">
+        <img class="message-img" src="../../static/image/logo.png" alt="Волчат">
             <div class="message-content">
                 <p class="text">${text}</p>
                 <p class="text time">00:00</p>
@@ -458,7 +464,7 @@ async function loadToken() {
     console.log(response)
 }
 
-socket.on('update-token',async () => {
+socket.on('update-token', async () => {
     try {
         console.log("Обновление токена...");
         const response = await fetch('http://127.0.0.1:5000/refresh', {
@@ -726,7 +732,7 @@ if (gradientBox) {
 }
 
 //шифрование
-    async function saveDecryptedKeyToLocal(decryptedCryptoKey, storageKeyName = 'private') {
+async function saveDecryptedKeyToLocal(decryptedCryptoKey, storageKeyName = 'private') {
     // 1. Экспортируем рабочий CryptoKey в формат JWK (JSON Web Key)
     const jwkKey = await window.crypto.subtle.exportKey("jwk", decryptedCryptoKey);
 
@@ -927,6 +933,7 @@ async function importFriendPublicKey(jwkKey) {
         []
     );
 }
+
 /**
  * Шифрование сообщения перед отправкой
  * @param {CryptoKey} sharedAesKey - Симметричный ключ AES-GCM (сгенерированный Хеллманом)
@@ -942,7 +949,7 @@ async function encryptChatMessage(sharedAesKey, textMessage) {
 
     // Шифруем данные симметричным ключом[cite: 1, 4]
     const cipherTextBuffer = await window.crypto.subtle.encrypt(
-        { name: "AES-GCM", iv: iv },
+        {name: "AES-GCM", iv: iv},
         sharedAesKey,
         encodedText
     );
@@ -968,7 +975,7 @@ async function decryptChatMessage(sharedAesKey, cipherTextBase64, ivBase64) {
 
         // Расшифровываем, используя ТОТ ЖЕ вектор, с которым шифровалось сообщение[cite: 1, 4]
         const decryptedBuffer = await window.crypto.subtle.decrypt(
-            { name: "AES-GCM", iv: iv },
+            {name: "AES-GCM", iv: iv},
             sharedAesKey,
             cipherTextBuffer
         );

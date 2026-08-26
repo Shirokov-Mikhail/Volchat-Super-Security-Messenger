@@ -59,7 +59,6 @@
                 <div class="input-block"><button class="close button" id="close_auth"><-</button></div>
             </div>
             <div class="inputs">
-
                 <div class="input-block" id="email_block_auth">
                     <label for="email_auth">Логин</label>
                     <input type="text" id="email_auth" name="email" class="email" required placeholder="myEmail@volchat.ru">
@@ -73,22 +72,26 @@
                     </div>
                 </div>
             </div>
-            <button class="button  button-form button-auth" type="button" id="submin-x-auth">Войти</button>
+            <button class="button button-form button-auth" type="button" id="submin-x-auth">Войти</button>
         </div>
     </div>
     <div class="chat-page page" id="chat-page">
         <div class="chats-panel" id="contacts">
-            <div class="chat-panel-element">
+            <div class="chat-panel-element center">
+<!--                <button class="close button input-type-button" id="setings"><img src="../../static/image/setting-3.png" class="message-img"  class="message-img" style="width: 30px !important; height: 30px !important;"></button>-->
                 <h2 class="title">Чаты</h2>
             </div>
             <!--    active-chat-->
-
         </div>
         <div class="right-panel" id="chat-panel" >
             <div class="chat-title-panel">
-                <button class="chat-panel-element">
-                    <img src="../../static/image/logo.png" alt="Волчат">
+                <button class="chat-panel-element" id="user-info">
+                    <img src="../../static/image/test.png" alt="Волчат">
                     <h2 class="title" id="name">Мишаня</h2>
+<!--                    <div class="user-info">-->
+<!--                        <h2 class="title" id="name">Мишаня</h2>-->
+<!--                        <span class="text">Онлайн</span>-->
+<!--                    </div>-->
 
                 </button>
             </div>
@@ -165,14 +168,64 @@
             </div>
         </div>
 
+        <div class="right-panel absolut-messages" id="user-settings-panel">
+            <div class="search-chat-header">
+                <button onclick="closeSettings()" class="chat-panel-element btn-back button close">
+                    <-
+                </button>
+                <h3 class="title">Настройки пользователя</h3>
+                <button class="chat-panel-element btn-back button close disabled" disabled>-></button>
+            </div>
 
+            <div class="chat-panel-element contacts-title">
+                <img src="../../static/image/test.png" alt="Волчат">
+            </div>
+            <div class="chat-panel-element contacts-title">
+                <h4 class="title  medium no-padding" id="user-name">Мишаня</h4>
+
+            </div>
+            <div class="chat-panel-element contacts-title no-padding">
+                <p class="text time" id="user-status">last time 15:53</p>
+            </div>
+            <div class="chat-panel-element contacts-title additional-info">
+                    <div class="chat-panel-element contacts-title">
+                        <p class="text medium" id="user-login">login: myName</p>
+                        <p class="text medium" >login: myName</p>
+                    </div>
+                <div class="chat-panel-element contacts-title">
+                    <p class="text medium">login: myName</p>
+                    <p class="text medium" >login: myName</p>
+                </div>
+                <div class="chat-panel-element contacts-title">
+                    <p class="text medium">login: myName</p>
+                    <p class="text medium" >login: myName</p>
+                </div>
+                <div class="chat-panel-element contacts-title">
+                    <p class="text medium">login: myName</p>
+                    <p class="text medium" >login: myName</p>
+                </div>
+                <div class="chat-panel-element contacts-title">
+                    <p class="text medium">login: myName</p>
+                    <p class="text medium" >login: myName</p>
+                </div>
+
+            </div>
+
+            <div class="new-photo-overlay">
+                <input type="file" id="file-input" class="button" accept="image/*" >
+            </div>
+            <div>
+                <textarea disabled></textarea>
+            </div>
+
+        </div>
 
         <!--       тут -->
         <div class="chats-panel chats-panel-overlay" id="new-chat-panel" style="display: none;">
 
             <!-- Шапка: кнопка назад и поиск -->
             <div class="search-chat-header">
-                <button onclick="closeNewChat()" class="chat-panel-element btn-back close button">
+                <button onclick="closeNewChat()" class="chat-panel-element btn-back button close">
                     <-
                 </button>
                 <input type="text" id="search-user" class="input-search" placeholder="Найти по нику...">

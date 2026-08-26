@@ -114,7 +114,7 @@ main > * {
     color: var(--main-font-color);
     font-family: var(--text-font);
     font-weight: 600;
-    font-size: 20px;
+    font-size: 15px;
 }
 .smaller-text {
     font-size: var(--foter-font-size);
@@ -162,6 +162,8 @@ main > * {
     border-radius: 60px;
     background-color: #131313 !important;
     color: white;
+    margin-right: 4px;
+    margin-left: 4px;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 .close:hover {
@@ -342,25 +344,34 @@ nav {
     justify-content: center;
     flex-wrap: wrap;
     height: 100vh;
+    /*width: 80%;*/
+    /*max-width: 1836px;*/
     margin: 10px;
     overflow: hidden;
-
     position: relative; /* Чтобы панель поиска не улетала за края */
+
 }
 .chats-panel {
+    left: 15px;
+    position: absolute;
     display: flex;
     flex-direction: column;
+    align-self: start;
     width: 20%;
-    height: 100%;
+    background: #18191e;
+    padding: 10px;
+    height: 97%;
+    border-radius: 10px;
     overflow-y: auto;
     /*border-right: 1.5px solid var(--main-font-color);*/
 }
 .right-panel {
-    width: 70%;
+    width: 40%;
     display: flex;
     flex-direction: column;
     /*margin-left: 1%;*/
-    margin-right: 9%;
+    align-self: center;
+    margin-left: 200px;
     filter: blur(10px);
     height: 100%;
 }
@@ -389,19 +400,43 @@ nav {
    ========================================= */
 .chat-panel-element {
     display: flex;
-    justify-content: space-around;
-    height: 80px;
-    width: 100%;
+    align-self: center;
+    justify-content: start;
+
+    height: 70px;
+    width: 97%;
     background-color: transparent;
     align-items: center;
 
     padding: 0;
     border: 1px;
     cursor: pointer;
+    border-radius: 5px;
+    margin: 2px;
+}
+.medium{
+    font-size: 18px;
+}
+.user-img{
+    width: auto !important;
+    height: 100% !important;
+
+}
+.center{
+    justify-content: center;
+    align-self: center;
+    cursor: default;
 }
 .chat-panel-element img {
-    height: 100%;
+    height: auto;
     width: auto;
+    align-self: start;
+}
+.to-bottom{
+    cursor: pointer;
+    align-self: flex-end;
+    margin-top: auto;
+    background-color: #0f1015;
 }
 .active-user {
     background-color: revert;
@@ -440,24 +475,26 @@ nav {
 /* Панель поиска / добавления нового чата */
 .chats-panel-overlay {
     position: absolute;
-    left: 0;
+    left: 15px;
     top: 0;
     width: 20%;
     height: 100%;
-    background-color: var(--main-fone-color);
+    background-color: #22232a;
     z-index: 10;
 }
 .search-chat-header {
     display: flex;
     align-items: center;
-    justify-content: space-evenly;
+    justify-content: space-between;
     margin: 10px;
+    width: 98% !important;
 }
 .btn-back {
     height: 50px;
     margin: 0;
     justify-content: center;
     padding: 0;
+    border-radius: 90px;
 }
 .input-search {
     width: 70%;
@@ -466,11 +503,16 @@ nav {
 }
 .contacts-title {
     cursor: default;
-    justify-content: center;
+    justify-content: space-around;
     height: auto;
 }
 .contacts-title h2 {
     font-size: 20px;
+}
+.contacts-title img{
+    border-radius: 360px;
+    width: 20% !important;
+    height: auto !important;
 }
 
 /* =========================================
@@ -486,8 +528,31 @@ nav {
     margin-left: 0;
     align-items: center;
     justify-content: left;
-    border-bottom: 1.5px solid var(--main-font-color);
 
+}
+#user-info{
+    display: flex;
+    justify-content: start;
+    margin: 5px;
+    width: 100%;
+    height: 45px;
+    padding: 0;
+    border: 2px solid #22232a;
+    border-radius: 100px;
+    background: #22232a !important;
+    *{
+        padding-right: 10px;
+    }
+}
+#name{
+    display: flex;
+    justify-content: start;
+    width: 70%;
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: 100px;
+    background: transparent !important;
+    color: var(--main-font-color);
 }
 .chat-title-panel img {
     width: auto;
@@ -519,7 +584,43 @@ nav {
     max-height: 90%;
     flex-grow: 1;
     overflow-y: auto;
-    background: radial-gradient(#161614 0%, transparent 70%);
+    /*background: radial-gradient(#161614 0%, transparent 70%);*/
+
+}
+#user-settings-panel{
+    left: 79%;
+    top: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: start;
+    margin: 5px;
+    width: 20%;
+    height: 80%;
+    padding: 0;
+    border: 2px solid #22232a;
+    border-radius: 10px;
+    background: #0f1015 !important;
+
+}
+#team-photo{
+    width: 10%;
+
+}
+.disabled{
+    cursor: default !important;
+
+}
+.no-padding{
+    padding: 0 !important;
+    margin: 0 !important;
+}
+.additional-info{
+    display: flex;
+    flex-wrap: wrap;
+    width: 80%;
+    border-radius: 20px;
+    background: #22232a;
+    height: 300px;
 
 }
 .messages img {
@@ -541,8 +642,10 @@ nav {
     justify-content: flex-end;
 }
 .message-img {
-    width: 80px;
-    height: 80px;
+    width: 30px;
+    height: 30px;
+
+    align-self: center;
 }
 .message-content {
     display: flex;
@@ -574,7 +677,7 @@ nav {
     padding: 10px;
 }
 .message-input input {
-    width: 70%;
+    width: 80%;
     height: 10px;
     padding: 7px;
 }
@@ -591,6 +694,10 @@ nav {
 .input-type-button {
     font-size: 16px;
     padding: 10px;
+    align-items: center;
+}
+#setings{
+    padding: 5px !important;
 }
 .send-img {
     width: 80px;
