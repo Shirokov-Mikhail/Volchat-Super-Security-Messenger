@@ -1,8 +1,11 @@
 import datetime
+import os
+
 import redis
 
 from glob import escape
 
+from flask.cli import load_dotenv
 from flask_mysqldb import MySQL
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session, make_response
 from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
@@ -11,26 +14,32 @@ from sqlalchemy.util.langhelpers import tag_method_for_warnings
 from functions.db import DB, DataBaseLoader, DbTokenAccessCheck, TokenManager
 from functions.nonce import verify_nonce_signature, generate_nonce
 
+load_dotenv()
+
 app = Flask(__name__)
-app.config["MYSQL_HOST"] = "localhost"
-app.config["MYSQL_USER"] = "root"
-app.config["MYSQL_PASSWORD"] = ""
-app.config["MYSQL_DB"] = "volchat"
+app.config["MYSQL_HOST"] = os.getenv("MYSQL_HOST")
+app.config["MYSQL_USER"] = os.getenv("MYSQL_USER")
+app.config["MYSQL_PASSWORD"] = os.getenv("MYSQL_PASSWORD")
+app.config["MYSQL_DB"] = os.getenv("MYSQL_DB")
 app.config['SECRET_KEY'] = "Volchatus45Naperdatus7211"
 # Файл .env на вашем сервере
-ACCESS_SECRET = "ваша_постоянная_строка_которую_знает_только_сервер"
-REFRESH_SECRET = "другая_постоянная_строка_которую_знает_только_сервер"
+# ACCESS_SECRET = "ваша_постоянная_строка_которую_знает_только_сервер"
+# REFRESH_SECRET = "другая_постоянная_строка_которую_знает_только_сервер"
 
-app.config['SESSION_COOKIE_SECURE'] = False  # отключить при https
+# 3. Подгружаем секреты
+app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
+app.secret_key = os.getenv("SECRET_KEY")
 
-app.config['SESSION_COOKIE_HTTPONLY'] = False  # True при https
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Или 'Lax', если фронт и бек на одном домене
-SECRET_KEY = "Volchatus45Naperdatus7211"
-app.secret_key = 'Volchatus45Naperdatus7211'
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
+ACCESS_SECRET = os.getenv("ACCESS_SECRET")
+REFRESH_SECRET = os.getenv("REFRESH_SECRET")
+
+# 4. Грамотная настройка сессий в зависимости от окружения
+is_production = os.getenv("FLASK_ENV") == "production"
 
 app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_COOKIE_SECURE'] = is_production  # False при локальной разработке[cite: 1][cite: 1, 2]
+app.config['SESSION_COOKIE_HTTPONLY'] = True         # Всегда True для защиты токенов[cite: 1]
+app.config['SESSION_COOKIE_SAMESITE'] = 'Strict' if is_production else 'Lax' # Lax для локалки[cite: 1]
 
 mysql = MySQL(app)
 socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False)
