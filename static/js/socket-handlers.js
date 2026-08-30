@@ -25,7 +25,7 @@ export function handleStartSession(data) {
 
     ui.contacts.textContent = '';
     ui.contacts.innerHTML = chat_panel_additionl_elements.start;
-
+    appState.chats = []
     for (const key in data['clients']) {
         appState.chats.push(data['clients'][key]);
         ui.contacts.innerHTML += `<button onclick="openChat(${data['clients'][key][0]}, ${key})" class="chat-panel-element chat-panel-hover">
@@ -33,7 +33,6 @@ export function handleStartSession(data) {
             <p class="text medium">${data['clients'][key][1]}</p>
         </button>`;
     }
-
     ui.contacts.innerHTML += chat_panel_additionl_elements.end;
 }
 
@@ -55,7 +54,6 @@ export async function handleAuth(data) {
     if (appState.privatekey === undefined) {
         appState.privatekey = await loadDecryptedKeyFromLocal();
     }
-
     appState.iv = data['iv'];
     localStorage.setItem('iv', appState.iv);
     localStorage.setItem('user_key', appState.publickey);

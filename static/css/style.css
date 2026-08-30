@@ -1,24 +1,62 @@
 /* =========================================
    1. ШРИФТЫ И ПЕРЕМЕННЫЕ
    ========================================= */
-@font-face {
-    font-family: 'Montserrat';
-    src: url('../media/fonts/Montserrat/static/Montserrat-Bold.ttf');
-    font-weight: 600;
-}
-@font-face {
-    font-family: 'Roboto';
-    src: url('../media/fonts/Roboto/static/Roboto-Light.ttf');
-    font-weight: 300;
-}
+/*@font-face {*/
+/*    font-family: 'Montserrat';*/
+/*    src: url('../media/fonts/Montserrat/static/Montserrat-Bold.ttf');*/
+/*    font-weight: 600;*/
+/*}*/
+/*@font-face {*/
+/*    font-family: 'Roboto';*/
+/*    src: url('../media/fonts/Roboto/static/Roboto-Light.ttf');*/
+/*    font-weight: 300;*/
+/*}*/
 /*#1A202C*/
 :root {
+    /* Базовые (было изначально) */
     --main-font-color: white;
     --main-fone-color: #0f1015;
-    --title-font: 'Montserrat', sans-serif;
-    --text-font: "Roboto", sans-serif;
+    --title-font: 'Unbounded', sans-serif;
+    --text-font: "Inter", sans-serif;
     --foter-color: #1B365D;
     --foter-font-size: 14px;
+    /* Фоны панелей и элементов */
+    --panel-bg: #22232a;      /* .active-chat, оверлей, #user-info, #user-settings-panel */
+    --sidebar-bg: #18191e;    /* левая панель чатов */
+    --input-bg: #161614;      /* поля ввода, кнопка отправки */
+    --close-btn-bg: #131313;  /* круглые кнопки .close */
+    --link-color: #454dd0;    /* мелкие ссылки */
+    --dark-text: black;       /* текст на светлом фоне (hover, активный юзер) */
+    --hover-contrast-text: contrast-color(gray);
+    --hover-filter: contrast(0.01);
+
+    /* Скроллбар */
+    --scrollbar-thumb: #333333;
+    --scrollbar-thumb-hover: #555555;
+    --scrollbar-track: #0a0a0a;
+
+    /* Радиусы скругления */
+    --radius-sm: 5px;      /* .chat-panel-element */
+    --radius-md: 10px;     /* .button, .filter, .chats-panel, #user-settings-panel */
+    --radius-lg: 20px;     /* input, #send-message, .additional-info */
+    --radius-pill: 90px;   /* .btn-back, .chat-title-panel img */
+    --radius-round: 100px; /* #user-info, #name */
+
+    /* Границы */
+    --border-transparent: 2px solid transparent;
+    --border-panel: 2px solid var(--panel-bg);
+
+    /* Ширины */
+    --form-width: 55%;       /* .inputs, .button-form */
+    --avatar-max-width: 20%; /* .chat-title-panel img, .contacts-title img */
+
+    /* Размеры шрифта */
+    --fs-sm: 12px;    /* .time */
+    --fs-input: 18px; /* input, .error, #send-message */
+    --fs-lg: 20px;    /* .button, .nav-element */
+
+    /* Переходы */
+    --transition-fast: 0.3s ease;
 }
 
 /* =========================================
@@ -63,30 +101,30 @@ main > * {
 }
 ::-webkit-scrollbar-track {
     background: transparent; /* Скрываем дорожку по умолчанию */
-    border-radius: 10px;
+    border-radius: var(--radius-md);
 }
 ::-webkit-scrollbar-thumb {
     background: transparent; /* Скрываем ползунок по умолчанию */
-    border-radius: 10px;
+    border-radius: var(--radius-md);
 }
 
 /* ПОКАЗЫВАЕМ скролл при наведении курсора на любой элемент со скроллом */
 *:hover::-webkit-scrollbar-thumb {
-    background: #333333;
+    background: var(--scrollbar-thumb);
 }
 *:hover::-webkit-scrollbar-thumb:hover {
-    background: #555555;
+    background: var(--scrollbar-thumb-hover);
 }
 *:hover::-webkit-scrollbar-track {
-    background: #0a0a0a;
+    background: var(--scrollbar-track);
 }
 
 /* ПОКАЗЫВАЕМ скролл при активной прокрутке (класс будет добавлять JS) */
 .is-scrolling::-webkit-scrollbar-thumb {
-    background: #333333;
+    background: var(--scrollbar-thumb);
 }
 .is-scrolling::-webkit-scrollbar-track {
-    background: #0a0a0a;
+    background: var(--scrollbar-track);
 }
 
 /* Поддержка Firefox */
@@ -95,7 +133,7 @@ main > * {
     scrollbar-color: transparent transparent; /* Скрыт по умолчанию */
 }
 *:hover, .is-scrolling {
-    scrollbar-color: #333333 #0a0a0a; /* Видим при наведении или скролле */
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track); /* Видим при наведении или скролле */
 }
 /* =========================================
    3. ТИПОГРАФИКА
@@ -118,13 +156,13 @@ main > * {
 }
 .smaller-text {
     font-size: var(--foter-font-size);
-    color: #454dd0;
+    color: var(--link-color);
     background: transparent;
     border: none;
     cursor: pointer;
 }
 .white {
-    color: white;
+    color: var(--main-font-color);
     height: 50px;
     width: 40%;
 }
@@ -141,15 +179,15 @@ main > * {
     font-weight: 600;
     text-decoration: none;
     padding: 16px;
-    font-size: 20px;
+    font-size: var(--fs-lg);
     border: 3px solid var(--main-font-color);
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     background-color: var(--main-fone-color);
     color: var(--main-font-color);
     cursor: pointer;
 }
 .button-form {
-    width: 55%;
+    width: var(--form-width);
     height: 60px;
 }
 .close {
@@ -160,21 +198,21 @@ main > * {
     height: 45px !important;
     border: 1px solid transparent;
     border-radius: 60px;
-    background-color: #131313 !important;
-    color: white;
+    background-color: var(--close-btn-bg) !important;
+    color: var(--main-font-color);
     margin-right: 4px;
     margin-left: 4px;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 .close:hover {
-    background-color: white !important;
-    color: black;
+    background-color: var(--main-font-color) !important;
+    color: var(--dark-text);
 }
 .inputs {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 55%;
+    width: var(--form-width);
 }
 .input-block {
     display: flex;
@@ -185,12 +223,12 @@ input {
     color: var(--main-font-color);
     font-family: var(--title-font);
 
-    font-size: 18px;
-    background-color: #161614;
+    font-size: var(--fs-input);
+    background-color: var(--input-bg);
     align-self: center;
     width: 90%;
-    border: 2px solid transparent;
-    border-radius: 20px;
+    border: var(--border-transparent);
+    border-radius: var(--radius-lg);
     padding: 5px;
     margin: 10px;
 }
@@ -206,7 +244,7 @@ label {
     color: var(--main-font-color);
     font-family: var(--text-font);
     font-weight: 600;
-    font-size: 18px;
+    font-size: var(--fs-input);
     display: none;
 }
 
@@ -243,7 +281,7 @@ label {
 .filter {
     padding-top: 80px;
     padding-bottom: 80px;
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     backdrop-filter: brightness(0.35);
 }
 .absolut {
@@ -289,7 +327,7 @@ nav {
     align-self: center;
 }
 .nav-element {
-    font-size: 20px;
+    font-size: var(--fs-lg);
     color: var(--main-font-color);
     text-decoration: none;
     padding: 10px;
@@ -330,7 +368,7 @@ nav {
     height: 800px;
     width: 100%;
     border: 1px;
-    border-radius: 10px;
+    border-radius: var(--radius-md);
 }
 .slider-content {
     width: 48%;
@@ -358,10 +396,10 @@ nav {
     flex-direction: column;
     align-self: start;
     width: 20%;
-    background: #18191e;
+    background: var(--sidebar-bg);
     padding: 10px;
     height: 97%;
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     overflow-y: auto;
     /*border-right: 1.5px solid var(--main-font-color);*/
 }
@@ -411,7 +449,7 @@ nav {
     padding: 0;
     border: 1px;
     cursor: pointer;
-    border-radius: 5px;
+    border-radius: var(--radius-sm);
     margin: 2px;
 }
 .medium{
@@ -436,37 +474,37 @@ nav {
     cursor: pointer;
     align-self: flex-end;
     margin-top: auto;
-    background-color: #0f1015;
+    background-color: var(--main-fone-color);
 }
 .active-user {
     background-color: revert;
-    color: black !important;
+    color: var(--dark-text) !important;
 }
 .active-user .text, .active-user .title {
-    color: black !important;
+    color: var(--dark-text) !important;
 }
 .active-user:hover {
     background-color: transparent;
-    backdrop-filter: contrast(0.01);
-    color: contrast-color(gray) !important;
+    backdrop-filter: var(--hover-filter);
+    color: var(--hover-contrast-text) !important;
 }
 .active-user:hover .text, .active-user:hover .title {
-    color: contrast-color(gray) !important;
+    color: var(--hover-contrast-text) !important;
 }
 .active-chat {
-    background-color: #22232a;
+    background-color: var(--panel-bg);
 }
 
 .active-chat:hover {
     background-color: transparent;
-    backdrop-filter: contrast(0.01);
-    color: contrast-color(gray) !important;
+    backdrop-filter: var(--hover-filter);
+    color: var(--hover-contrast-text) !important;
 }
 .active-chat:hover .text, .active-chat:hover .title {
-    color: contrast-color(gray) !important;
+    color: var(--hover-contrast-text) !important;
 }
 .chat-panel-hover:hover {
-    background-color: #22232a;
+    background-color: var(--panel-bg);
 }
 /*.chat-panel-hover:hover .text {*/
 /*    color: black;*/
@@ -479,7 +517,7 @@ nav {
     top: 0;
     width: 20%;
     height: 100%;
-    background-color: #22232a;
+    background-color: var(--panel-bg);
     z-index: 10;
 }
 .search-chat-header {
@@ -494,7 +532,7 @@ nav {
     margin: 0;
     justify-content: center;
     padding: 0;
-    border-radius: 90px;
+    border-radius: var(--radius-pill);
 }
 .input-search {
     width: 70%;
@@ -511,7 +549,7 @@ nav {
 }
 .contacts-title img{
     border-radius: 360px;
-    width: 20% !important;
+    width: var(--avatar-max-width) !important;
     height: auto !important;
 }
 
@@ -537,9 +575,9 @@ nav {
     width: 100%;
     height: 45px;
     padding: 0;
-    border: 2px solid #22232a;
-    border-radius: 100px;
-    background: #22232a !important;
+    border: var(--border-panel);
+    border-radius: var(--radius-round);
+    background: var(--panel-bg) !important;
     *{
         padding-right: 10px;
     }
@@ -549,18 +587,18 @@ nav {
     justify-content: start;
     width: 70%;
     padding: 0;
-    border: 2px solid transparent;
-    border-radius: 100px;
+    border: var(--border-transparent);
+    border-radius: var(--radius-round);
     background: transparent !important;
     color: var(--main-font-color);
 }
 .chat-title-panel img {
     width: auto;
-    max-width: 20%;
+    max-width: var(--avatar-max-width);
     height: 100%;
     padding: 1px;
     border: 1px;
-    border-radius: 90px;
+    border-radius: var(--radius-pill);
 }
 .chat-title-panel .title {
     display: inline-flex;
@@ -590,16 +628,16 @@ nav {
 #user-settings-panel{
     left: 79%;
     top: 0;
-    display: flex;
+    display: none;/*flex*/
     flex-wrap: wrap;
     justify-content: start;
     margin: 5px;
     width: 20%;
     height: 80%;
     padding: 0;
-    border: 2px solid #22232a;
-    border-radius: 10px;
-    background: #0f1015 !important;
+    border: var(--border-panel);
+    border-radius: var(--radius-md);
+    background: var(--main-fone-color) !important;
 
 }
 #team-photo{
@@ -618,8 +656,8 @@ nav {
     display: flex;
     flex-wrap: wrap;
     width: 80%;
-    border-radius: 20px;
-    background: #22232a;
+    border-radius: var(--radius-lg);
+    background: var(--panel-bg);
     height: 300px;
 
 }
@@ -657,7 +695,7 @@ nav {
 .time {
     display: flex;
     justify-content: flex-end;
-    font-size: 12px;
+    font-size: var(--fs-sm);
 }
 
 /* Ввод сообщения */
@@ -683,11 +721,11 @@ nav {
 }
 #send-message {
     width: 50%;
-    border: 2px solid transparent;
-    border-radius: 20px;
+    border: var(--border-transparent);
+    border-radius: var(--radius-lg);
     padding: 14px;
-    font-size: 18px;
-    background-color: #161614;
+    font-size: var(--fs-input);
+    background-color: var(--input-bg);
     color: var(--main-font-color);
     font-family: var(--title-font);
 }

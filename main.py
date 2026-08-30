@@ -1,17 +1,13 @@
 import datetime
 import os
-
 import redis
-
 from glob import escape
-
 from flask.cli import load_dotenv
 from flask_mysqldb import MySQL
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session, make_response
 from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
-from sqlalchemy.util.langhelpers import tag_method_for_warnings
 
-from functions.db import DB, DataBaseLoader, DbTokenAccessCheck, TokenManager
+from functions.db import DataBaseLoader, DbTokenAccessCheck, TokenManager
 from functions.nonce import verify_nonce_signature, generate_nonce
 
 load_dotenv()
@@ -21,10 +17,6 @@ app.config["MYSQL_HOST"] = os.getenv("MYSQL_HOST")
 app.config["MYSQL_USER"] = os.getenv("MYSQL_USER")
 app.config["MYSQL_PASSWORD"] = os.getenv("MYSQL_PASSWORD")
 app.config["MYSQL_DB"] = os.getenv("MYSQL_DB")
-app.config['SECRET_KEY'] = "Volchatus45Naperdatus7211"
-# Файл .env на вашем сервере
-# ACCESS_SECRET = "ваша_постоянная_строка_которую_знает_только_сервер"
-# REFRESH_SECRET = "другая_постоянная_строка_которую_знает_только_сервер"
 
 # 3. Подгружаем секреты
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
@@ -284,7 +276,7 @@ def make_new_chat(data):
         if db.check_token(data['token'], 'access')[0]:
             users_id = data['users']
             owner_id = [data['user_id']]
-            chat_type = 'lockal'
+            chat_type = 'local'
             if len(data['users']) > 1:
                 chat_type = 'multi'
             users_id = owner_id + users_id
@@ -405,7 +397,7 @@ def refresh():
         else:
             return jsonify({"error": "Invalid token or type"}), 400
     except ValueError as e:
-        disconnect()
+
         return jsonify({"error": str(e)}), 401
 
 
