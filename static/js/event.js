@@ -7,7 +7,8 @@ import {
     new_chat_button_active,
     makeNewChat,
     send_messages,
-    register
+    register,
+    auth
 } from './actions.js';
 
 // x-bnt and form in start page

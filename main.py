@@ -1,51 +1,47 @@
-﻿import datetime
+﻿#standard libraries
+import datetime
+#imported libraries
+from glob import escape
 import os
 import redis
-from glob import escape
+#flask libraries
 from flask.cli import load_dotenv
 from flask_mysqldb import MySQL
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session, make_response
 from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
-
+#custom libraries
 from functions.db import DataBaseLoader, DbTokenAccessCheck, TokenManager
 from functions.nonce import verify_nonce_signature, generate_nonce
-
+#dotenv
 load_dotenv()
-
+#Flask app initialization
 app = Flask(__name__)
 app.config["MYSQL_HOST"] = os.getenv("MYSQL_HOST")
 app.config["MYSQL_USER"] = os.getenv("MYSQL_USER")
 app.config["MYSQL_PASSWORD"] = os.getenv("MYSQL_PASSWORD")
 app.config["MYSQL_DB"] = os.getenv("MYSQL_DB")
-
-# 3. Подгружаем секреты
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
 app.secret_key = os.getenv("SECRET_KEY")
-
 ACCESS_SECRET = os.getenv("ACCESS_SECRET")
 REFRESH_SECRET = os.getenv("REFRESH_SECRET")
-
-# 4. Грамотная настройка сессий в зависимости от окружения
 is_production = os.getenv("FLASK_ENV") == "production"
-
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_COOKIE_SECURE'] = is_production  # False при локальной разработке[cite: 1][cite: 1, 2]
 app.config['SESSION_COOKIE_HTTPONLY'] = True         # Всегда True для защиты токенов[cite: 1]
 app.config['SESSION_COOKIE_SAMESITE'] = 'Strict' if is_production else 'Lax' # Lax для локалки[cite: 1]
 
+#libraries initialization
 mysql = MySQL(app)
 socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False)
 r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
-
+#main page rander
 @app.route('/')
 def index():
     return render_template('index.html')
 
-
 @socketio.on('connect')
 def handle_connect(auth):
-    # Socket.IO автоматически передает данные из поля auth клиента
     token = auth.get('token') if auth else None
     token_menager = TokenManager(mysql)
     if not token:
@@ -53,9 +49,7 @@ def handle_connect(auth):
         return
 
     try:
-        # Проверяем токен
         payload = token_menager.verify_token(token, 'access')
-
         db = DataBaseLoader(mysql)
         login = db.select_user_id_where_login(payload.get('user_id'))
         print(f"Пользователь {payload.get('user_id')} успешно подключен (SID: {request.sid})")
@@ -83,7 +77,7 @@ def start_session(data):
         db = TokenManager(mysql)
         if db.check_token(data['token'], 'access')[0]:
 
-            base['clients'] = db.loadChats(id)
+            base['clients'] = db.load_chats(id)
             base['token'] = 'asd'
             emit('start-session', base)
         else:
@@ -109,18 +103,18 @@ def user_load_messages(data):
     login: str = data['login']
     db = TokenManager(mysql)
     login.capitalize()
-    if db.auth(login):
-
+    db_result, db_bool = db.auth(login)
+    if db_bool:
         if not data['token'] or not db.check_token(data['token'], 'access')[0]:
             nonce = generate_nonce()
             r.set(name=f"nonce:{login}", value=nonce, ex=60)
             emit('need-access-token', {'status': 'success',
                                        'login': login,
-                                       'id': db.id,
-                                       'private-key': db.key,
-                                       'public-key': db.public,
+                                       'id': db_result['id'],
+                                       'private-key': db_result['key'],
+                                       'public-key': db_result['public'],
                                        'nonce': nonce
-                , 'iv': db.message
+                , 'iv': db_result['iv']
                                        })
         elif not db.check_token(data['token'], 'access')[0]:
             emit('need-new-access-token', {'status': 'success'})
@@ -128,10 +122,10 @@ def user_load_messages(data):
             print(True)
             # тут придется повторить запрос
             emit('auth', {'status': 'success',
-                          'id': db.id,
-                          'iv': db.message,
-                          'private': db.key,
-                          'public': db.public
+                          'id': db_result['id'],
+                          'iv': db_result['iv'],
+                          'private': db_result['key'],
+                          'public': db_result['public']
                           })
     else:
         emit('auth', {
@@ -143,15 +137,13 @@ def user_load_messages(data):
 def load_chat(data):
     db = None
     try:
-
         db = TokenManager(mysql)
         if db.check_token(data['token'], 'access')[0]:
-            out, into, all = db.loadMessages(data['user_id'], data['chat_id'])
+            out, into, all = db.load_messages(data['user_id'], data['chat_id'])
             leave_room(f'chat_{data['old_chat_id']}')
-            friend_login, friend_public = db.load_Friends_Info(data['user_id'], data['chat_id'])
+            friend_login, friend_public, friend_id = db.load_friends_info(data['user_id'], data['chat_id'])
             room_name = f"chat_{data['chat_id']}"
             join_room(room_name)
-            friend_id = db.friend_id
             emit('load-chat', {'status': 'success',
                                'out': list(out),
                                'into': list(into),
@@ -169,7 +161,8 @@ def load_chat(data):
                                'into': list(),
                                'all': list(),
                                'friend_login': 'friend_login',
-                               'friend_id': 'friend_id'
+                               'friend_id': 0,
+                               'friend_public': ''
                                })
             return
     except Exception as e:
@@ -194,8 +187,8 @@ def register(data):
     db = DataBaseLoader(mysql)
     login.capitalize()
     if db.check_login(login):
-        db.fast_registration(login)
-        emit('registration-check', {'status': 'success', 'user_id': db.id})
+        id = db.fast_registration(login)
+        emit('registration-check', {'status': 'success', 'user_id': id})
     else:
         emit('registration-check', {'status': 'error'})
 
@@ -280,7 +273,7 @@ def make_new_chat(data):
             if len(data['users']) > 1:
                 chat_type = 'multi'
             users_id = owner_id + users_id
-            chat_id, chat_name = db.new_chat(str(data['name']), users_id, type=chat_type)
+            chat_id, chat_name = db.new_chat(str(data['name']), users_id, chat_type=chat_type)
             if chat_name:
                 emit('make_new_chat', {'status': 'success', 'chat_id': chat_id,
                                        'chat_name': chat_name})
@@ -291,7 +284,6 @@ def make_new_chat(data):
             emit('make_new_chat', {'status': 'unsuccess'})
         else:
             emit('need-new-access-token', {'status': 'success'})
-
         return
 
     except Exception as e:
@@ -355,7 +347,6 @@ def login():
             max_age=30 * 24 * 60 * 60,  # Время жизни куки в браузере (в секундах, например 30 дней)
             path='/refresh'  # СУПЕР-ОПТИМИЗАЦИЯ: Браузер будет прикреплять эту куку ТОЛЬКО к запросам на URL /refresh
         )
-        # user_load_messages({'login': login, 'token': access_token})
         return response
     return None
 
