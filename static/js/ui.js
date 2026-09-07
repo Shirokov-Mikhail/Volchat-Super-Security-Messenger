@@ -10,6 +10,12 @@ export const ui = {
     messages_list: document.getElementById("messages"),
     send_button: document.getElementById("send-button"),
     send_message: document.getElementById("send-message"),
+    x_close: document.getElementById("close_auth"),
+    auth_form: document.getElementById("autorisi"),
+    register_button: document.getElementById("register-btn"),
+    auth_btn: document.getElementById("auth-btn"),
+    register_form: document.getElementById("register"),
+    x_register: document.getElementById("close-register"),
 
     start_panel: document.getElementById("start-panel"),
     main_chat_panel: document.getElementById("chat-panel"),

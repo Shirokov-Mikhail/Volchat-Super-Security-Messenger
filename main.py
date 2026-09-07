@@ -1,4 +1,4 @@
-import datetime
+﻿import datetime
 import os
 import redis
 from glob import escape
