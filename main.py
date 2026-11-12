@@ -318,7 +318,7 @@ def login():
     signature = data.get('sig')
     db = DataBaseLoader(mysql)
     user_id = data.get('user_id')
-    public_key = db.publickey_for_user_id(user_id)[0]
+    public_key = db.publickey_for_user_id(user_id)
     key = f"nonce:{login}"
     pipe = r.pipeline()
     pipe.get(key)
