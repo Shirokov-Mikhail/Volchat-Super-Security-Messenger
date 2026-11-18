@@ -42,7 +42,9 @@ class DataBaseLoader:
             db_data = cur.fetchone()
             if db_data is None:
                 return ''
+
             return db_data[0]
+
 
     def fast_registration(self, login) -> int | None:#выделяем место под пользователя
         try:
@@ -96,6 +98,7 @@ class DataBaseLoader:
             chat_ids = self.load_chat_member(user_id)
             if not chat_ids:
                 return []
+            print(chat_ids)
             format_strings = ', '.join(['%s'] * len(chat_ids))
             query = f"SELECT id, name FROM chats WHERE id IN ({format_strings})"
 
@@ -132,9 +135,9 @@ class DataBaseLoader:
                 result = cur.fetchall()
                 if not result:
                     raise ValueError("No other members found in the chat.")
-                friend_id = list(filter(lambda x: x != 0, [i[0] for i in result]))[0]
+                friends_id = list(filter(lambda x: x != 0, [i[0] for i in result]))[0]
 
-            return True, friend_id
+            return True, friends_id
         except Exception as e:
             print('serch-user-info', e)
             return False, []
@@ -173,10 +176,10 @@ class DataBaseLoader:
             for member in members:
                 with self.mysql.connection.cursor() as cur:
                     cur.execute(f'''INSERT INTO `chat_members`(`chat_id`, `user_id`) VALUES (%s,%s)''', (chat_id, member))
+                    self.mysql.connection.commit()
             return True
         except Exception as e:
             print('generate', e)
-            self.close()
             return False
 
 
@@ -228,13 +231,21 @@ class DataBaseLoader:
             return result[0] if result else None
         except Exception as e:
             print(e)
+            return None
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+        return False
+
 
 #для работы с токенами
 class DbTokenAccessCheck(DataBaseLoader):
     def __init__(self, mysql):
         super().__init__(mysql)
 
-    def addRefreshToken(self, id: str, max_age: int):
+    def add_refresh_token(self, id: str, max_age: int):
         try:
             now = datetime.datetime.now(datetime.timezone.utc)
             expires_at = now + datetime.timedelta(seconds=max_age)
@@ -249,7 +260,7 @@ class DbTokenAccessCheck(DataBaseLoader):
             print(f"Ошибка при добавлении токена: {e}")
             self.mysql.connection.rollback()
 
-    def checkRefreshToken(self, id: str) -> bool:
+    def check_refresh_token(self, id: str) -> bool:
         try:
             sql = "SELECT `expires_at` FROM `refresh` WHERE `id` = %s"
             with self.mysql.connection.cursor() as cur:
@@ -270,7 +281,7 @@ class DbTokenAccessCheck(DataBaseLoader):
             print(f"Ошибка при проверке токена: {e}")
             return False
 
-    def updateRefreshToken(self, old_id: str, new_id: str, new_max_age: int):
+    def update_refresh_token(self, old_id: str, new_id: str, new_max_age: int):
         try:
             now = datetime.datetime.now(datetime.timezone.utc)
             new_expires_at = now + datetime.timedelta(seconds=new_max_age)
@@ -283,7 +294,7 @@ class DbTokenAccessCheck(DataBaseLoader):
             print(f"Ошибка при обновлении токена: {e}")
             self.mysql.connection.rollback()
 
-    def deleteRefreshToken(self, id: str):
+    def delete_refresh_token(self, id: str):
         try:
             sql = "DELETE FROM `refresh` WHERE `id` = %s"
             with self.mysql.connection.cursor() as cur:
@@ -294,7 +305,7 @@ class DbTokenAccessCheck(DataBaseLoader):
             print(f"Ошибка при удалении токена: {e}")
             self.mysql.connection.rollback()
 
-    def autoDeleteRefreshTokens(self):
+    def auto_delete_refresh_tokens(self):
         try:
             sql = "DELETE FROM `refresh` WHERE `expires_at` < UTC_TIMESTAMP()"
             with self.mysql.connection.cursor() as cur:
@@ -349,7 +360,7 @@ class TokenManager(DbTokenAccessCheck):
 
             if expected_type == 'refresh':
                 jti = payload.get('jti')
-                if not self.checkRefreshToken(jti):
+                if not self.check_refresh_token(jti):
                     raise ValueError("Refresh-токен аннулирован (не найден в базе данных)")
 
             return payload
@@ -372,7 +383,7 @@ class TokenManager(DbTokenAccessCheck):
         access_token = self._generate_access(user_id)
         refresh_token = self._generate_refresh(user_id, jti)
 
-        self.addRefreshToken(jti, self.REFRESH_MAX_AGE)
+        self.add_refresh_token(jti, self.REFRESH_MAX_AGE)
 
         return access_token, refresh_token
 
@@ -397,7 +408,7 @@ class TokenManager(DbTokenAccessCheck):
             user_id = payload.get('user_id')
 
             new_jti = str(uuid.uuid4())
-            self.updateRefreshToken(old_jti, new_jti, self.REFRESH_MAX_AGE)
+            self.update_refresh_token(old_jti, new_jti, self.REFRESH_MAX_AGE)
 
             new_access = self._generate_access(user_id)
             new_refresh = self._generate_refresh(user_id, new_jti)

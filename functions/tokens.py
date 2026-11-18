@@ -45,7 +45,7 @@ class TokenManager(DbTokenAccessCheck):
 
             if expected_type == 'refresh':
                 jti = payload.get('jti')
-                if not self.checkRefreshToken(jti):
+                if not self.check_refresh_token(jti):
                     raise ValueError("Refresh-токен аннулирован (не найден в базе данных)")
 
             return payload
@@ -68,7 +68,7 @@ class TokenManager(DbTokenAccessCheck):
         access_token = self._generate_access(user_id)
         refresh_token = self._generate_refresh(user_id, jti)
 
-        self.addRefreshToken(jti, self.REFRESH_MAX_AGE)
+        self.add_refresh_token(jti, self.REFRESH_MAX_AGE)
 
         return access_token, refresh_token
 
@@ -93,7 +93,7 @@ class TokenManager(DbTokenAccessCheck):
             user_id = payload.get('user_id')
 
             new_jti = str(uuid.uuid4())
-            self.updateRefreshToken(old_jti, new_jti, self.REFRESH_MAX_AGE)
+            self.update_refresh_token(old_jti, new_jti, self.REFRESH_MAX_AGE)
 
             new_access = self._generate_access(user_id)
             new_refresh = self._generate_refresh(user_id, new_jti)

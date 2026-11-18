@@ -102,7 +102,7 @@ def start_session(data):
 def user_load_messages(data):
     login: str = data['login']
     db = TokenManager(mysql)
-    login.capitalize()
+    # login.capitalize()
     db_result, db_bool = db.auth(login)
     if db_bool:
         if not data['token'] or not db.check_token(data['token'], 'access')[0]:
@@ -257,9 +257,7 @@ def need_members(data):
     except Exception as e:
         print('need-members error:', e)
         emit('need-members', {'status': 'error', 'members': []})
-    finally:
-        if db:
-            db.close()
+
 
 
 @socketio.on('make_new_chat')
